@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
 const SAMPLE_CSV = `email,Student Name,Parent Name,WhatsApp No,Campus,Date,Time,Location Link
@@ -90,24 +89,31 @@ export function UploadPanel() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-      <Card>
-        <CardHeader>
+      <section className="rounded-2xl border border-slate-200/70 bg-white/70 shadow-sm shadow-slate-900/5 backdrop-blur">
+        <div className="border-b border-slate-200/70 p-4">
           <div className="text-lg font-semibold text-slate-900">Bulk upload</div>
           <div className="mt-1 text-sm text-slate-600">
-            Upload a file and notify everyone in it. Validation is optional, but recommended.
+            Upload a file and notify everyone in it. Validation is optional, but
+            recommended.
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="p-4">
           <div className="space-y-4">
             <div className="rounded-2xl border border-dashed border-slate-200/80 bg-white/50 p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <div className="text-sm font-medium text-slate-900">Upload file</div>
+                  <div className="text-sm font-medium text-slate-900">
+                    Upload file
+                  </div>
                   <div className="mt-1 text-xs text-slate-500">
                     Supported: .csv, .xlsx, .xls
                   </div>
                 </div>
-                <Button type="button" variant="secondary" onClick={downloadSampleCsv}>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={downloadSampleCsv}
+                >
                   Download sample CSV
                 </Button>
               </div>
@@ -169,17 +175,17 @@ export function UploadPanel() {
                 : "Tip: Run validation to catch missing columns and row issues before sending."}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <div className="text-sm font-medium text-slate-900">Summary</div>
+      <section className="rounded-2xl border border-slate-200/70 bg-white/70 shadow-sm shadow-slate-900/5 backdrop-blur">
+        <div className="border-b border-slate-200/70 p-4">
+          <div className="text-sm font-semibold text-slate-900">Summary</div>
           <div className="mt-1 text-xs text-slate-500">
             We’ll highlight rows that need fixing.
           </div>
-        </CardHeader>
-        <CardContent>
+        </div>
+        <div className="p-4">
           {error ? (
             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
@@ -256,8 +262,8 @@ export function UploadPanel() {
               Upload a file to see validation and send results.
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   );
 }

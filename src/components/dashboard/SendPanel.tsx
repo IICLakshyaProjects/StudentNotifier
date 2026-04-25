@@ -2,7 +2,6 @@
 
 import * as React from "react";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { apiFetch } from "@/lib/auth-client";
@@ -49,27 +48,24 @@ export function SendPanel() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <div className="text-lg font-semibold text-slate-900">
-                Send an invite
-              </div>
-              <div className="mt-1 text-sm text-slate-600">
-                Fill in the details and we’ll notify the student/parent.
-              </div>
+      <section className="rounded-2xl border border-slate-200/70 bg-white/70 shadow-sm shadow-slate-900/5 backdrop-blur">
+        <div className="flex flex-col gap-3 border-b border-slate-200/70 p-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <div className="text-lg font-semibold text-slate-900">Send invite</div>
+            <div className="mt-1 text-sm text-slate-600">
+              Fill in the details and we’ll notify the student/parent.
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setIsOpen((v) => !v)}
-            >
-              {isOpen ? "Hide form" : "Show form"}
-            </Button>
           </div>
-        </CardHeader>
-        <CardContent>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsOpen((v) => !v)}
+          >
+            {isOpen ? "Hide form" : "Show form"}
+          </Button>
+        </div>
+
+        <div className="p-4">
           {!isOpen ? (
             <div className="text-sm text-slate-600">
               Form hidden. Click “Show form” to send another invite.
@@ -149,56 +145,52 @@ export function SendPanel() {
               </div>
             </form>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <div className="text-sm font-medium text-slate-900">Status</div>
-            <div className="mt-1 text-xs text-slate-500">
-              If something fails, you’ll see why here.
+      <section className="rounded-2xl border border-slate-200/70 bg-white/70 shadow-sm shadow-slate-900/5 backdrop-blur">
+        <div className="border-b border-slate-200/70 p-4">
+          <div className="text-sm font-semibold text-slate-900">Status</div>
+          <div className="mt-1 text-xs text-slate-500">
+            If something fails, you’ll see why here.
+          </div>
+        </div>
+        <div className="p-4">
+          {error ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
             </div>
-          </CardHeader>
-          <CardContent>
-            {error ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {error}
+          ) : result ? (
+            <div className="space-y-2">
+              <div className="text-sm text-slate-900">
+                Result:{" "}
+                <span
+                  className={[
+                    "font-medium",
+                    result.ok ? "text-emerald-700" : "text-red-700",
+                  ].join(" ")}
+                >
+                  {result.message.status}
+                </span>
               </div>
-            ) : result ? (
-              <div className="space-y-2">
-                <div className="text-sm text-slate-900">
-                  Result:{" "}
-                  <span
-                    className={[
-                      "font-medium",
-                      result.ok ? "text-emerald-700" : "text-red-700",
-                    ].join(" ")}
-                  >
-                    {result.message.status}
-                  </span>
-                </div>
-                <div className="text-xs text-slate-500 font-mono">
-                  ID: {result.message.id}
-                </div>
-                {result.errors?.length ? (
-                  <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
-                    {result.errors.map((e, i) => (
-                      <li key={i}>{e}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-sm text-slate-600">Sent successfully.</div>
-                )}
+              <div className="text-xs text-slate-500 font-mono">
+                ID: {result.message.id}
               </div>
-            ) : (
-              <div className="text-sm text-slate-600">
-                Ready when you are.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+              {result.errors?.length ? (
+                <ul className="mt-3 list-disc pl-5 text-sm text-slate-700">
+                  {result.errors.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="text-sm text-slate-600">Sent successfully.</div>
+              )}
+            </div>
+          ) : (
+            <div className="text-sm text-slate-600">Ready when you are.</div>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
