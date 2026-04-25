@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
@@ -20,13 +21,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-10 border-b border-slate-200/70 bg-white/70 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-2xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm shadow-indigo-600/20" />
-            <div>
-              <div className="text-sm font-semibold text-slate-900">
-                Student Notifier
-              </div>
-              <div className="text-xs text-slate-500">Notifications dashboard</div>
-            </div>
+            <Image
+              src="/BLUE.png"
+              alt="Lakshya"
+              width={220}
+              height={44}
+              priority
+              className="h-8 w-auto select-none"
+            />
           </div>
 
           <Button
