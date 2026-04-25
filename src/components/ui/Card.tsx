@@ -7,7 +7,7 @@ export function Card({
   return (
     <div
       className={[
-        "rounded-2xl border border-zinc-200 bg-white shadow-sm",
+        "rounded-2xl border border-[var(--card-border)] bg-[var(--card)] shadow-sm shadow-slate-900/5 backdrop-blur",
         className || "",
       ].join(" ")}
       {...props}
@@ -20,7 +20,10 @@ export function CardHeader({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={["px-6 pt-6", className || ""].join(" ")} {...props} />
+    <div
+      className={["px-6 pt-6", className || ""].join(" ")}
+      {...props}
+    />
   );
 }
 
@@ -29,7 +32,10 @@ export function CardContent({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={["px-6 pb-6", className || ""].join(" ")} {...props} />
+    <div
+      className={["px-6 pb-6", className || ""].join(" ")}
+      {...props}
+    />
   );
 }
 

@@ -7,15 +7,15 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/20";
+  "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all disabled:opacity-60 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]";
 
 const variants: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary:
-    "bg-zinc-900 text-white hover:bg-zinc-800 active:bg-zinc-950 shadow-sm",
+    "bg-gradient-to-b from-indigo-600 to-indigo-700 text-white shadow-sm shadow-indigo-600/20 hover:from-indigo-500 hover:to-indigo-700 active:from-indigo-700 active:to-indigo-800",
   secondary:
-    "bg-white text-zinc-900 border border-zinc-200 hover:bg-zinc-50 active:bg-zinc-100",
+    "bg-white/75 text-slate-900 border border-slate-200/70 hover:bg-white active:bg-slate-50 backdrop-blur",
   danger:
-    "bg-red-600 text-white hover:bg-red-500 active:bg-red-700 shadow-sm",
+    "bg-gradient-to-b from-red-600 to-red-700 text-white shadow-sm shadow-red-600/15 hover:from-red-500 hover:to-red-700 active:from-red-700 active:to-red-800",
 };
 
 const sizes: Record<NonNullable<ButtonProps["size"]>, string> = {

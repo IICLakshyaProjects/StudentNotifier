@@ -7,9 +7,10 @@ import csvParser from "csv-parser";
 import connectDB from "@/lib/db";
 import Message from "@/models/Message";
 import { requireAuth } from "@/middleware/auth";
-import { buildCounsellingMessage } from "@/lib/message";
+import { buildCounsellingEmailHtml, buildCounsellingMessage } from "@/lib/message";
 import { sendWhatsApp } from "@/lib/infinito";
 import { sendEmail } from "@/lib/mailer";
+import { isInfinitoSynqEnabled } from "@/lib/feature-flags";
 import {
   isEmail,
   normalizeEmail,
@@ -118,6 +119,13 @@ async function sendOne({
     time,
     location,
   });
+  const html = buildCounsellingEmailHtml({
+    studentName,
+    campus,
+    date,
+    time,
+    location,
+  });
 
   const msg = await Message.create({
     studentName,
@@ -135,11 +143,13 @@ async function sendOne({
   let status: "sent" | "failed" = "sent";
   const errors: string[] = [];
 
-  try {
-    await sendWhatsApp({ to: whatsapp, message: text });
-  } catch (e: any) {
-    status = "failed";
-    errors.push(`whatsapp: ${e?.message || "failed"}`);
+  if (isInfinitoSynqEnabled()) {
+    try {
+      await sendWhatsApp({ to: whatsapp, message: text });
+    } catch (e: any) {
+      status = "failed";
+      errors.push(`whatsapp: ${e?.message || "failed"}`);
+    }
   }
 
   try {
@@ -147,6 +157,7 @@ async function sendOne({
       to: email,
       subject: "Counselling session confirmed",
       text,
+      html,
     });
   } catch (e: any) {
     status = "failed";

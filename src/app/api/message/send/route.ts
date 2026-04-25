@@ -5,7 +5,8 @@ import Message from "@/models/Message";
 import { requireAuth } from "@/middleware/auth";
 import { sendWhatsApp } from "@/lib/infinito";
 import { sendEmail } from "@/lib/mailer";
-import { buildCounsellingMessage } from "@/lib/message";
+import { buildCounsellingEmailHtml, buildCounsellingMessage } from "@/lib/message";
+import { isInfinitoSynqEnabled } from "@/lib/feature-flags";
 import {
   isEmail,
   normalizeEmail,
@@ -48,6 +49,13 @@ export async function POST(request: Request) {
     time,
     location,
   });
+  const html = buildCounsellingEmailHtml({
+    studentName,
+    campus,
+    date,
+    time,
+    location,
+  });
 
   await connectDB();
 
@@ -68,11 +76,15 @@ export async function POST(request: Request) {
   let status: "sent" | "failed" = "sent";
   const errors: string[] = [];
 
-  try {
-    whatsappResult = await sendWhatsApp({ to: whatsapp, message: text });
-  } catch (e: any) {
-    status = "failed";
-    errors.push(`whatsapp: ${e?.message || "failed"}`);
+  if (isInfinitoSynqEnabled()) {
+    try {
+      whatsappResult = await sendWhatsApp({ to: whatsapp, message: text });
+    } catch (e: any) {
+      status = "failed";
+      errors.push(`whatsapp: ${e?.message || "failed"}`);
+    }
+  } else {
+    whatsappResult = { skipped: true };
   }
 
   try {
@@ -80,6 +92,7 @@ export async function POST(request: Request) {
       to: email,
       subject: "Counselling session confirmed",
       text,
+      html,
     });
   } catch (e: any) {
     status = "failed";

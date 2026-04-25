@@ -47,19 +47,34 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-[radial-gradient(1200px_circle_at_20%_-10%,rgba(99,102,241,0.20),transparent_55%),radial-gradient(900px_circle_at_90%_10%,rgba(56,189,248,0.18),transparent_55%),linear-gradient(to_bottom,#f8fafc,#ffffff)]">
       <div className="mx-auto flex min-h-screen max-w-6xl items-center justify-center px-6 py-12">
         <div className="w-full max-w-md">
           <div className="mb-6">
- 
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-sky-500 shadow-sm shadow-indigo-600/20" />
+              <div>
+                <div className="text-sm font-semibold text-slate-900">
+                  Student Notifier
+                </div>
+                <div className="text-xs text-slate-500">Admin portal</div>
+              </div>
+            </div>
+
+            <h1 className="mt-6 text-3xl font-semibold tracking-tight text-slate-900">
               Admin sign in
             </h1>
-         
+            <p className="mt-2 text-sm text-slate-600">
+              Only admin accounts can sign in here.
+            </p>
           </div>
-
           <Card>
-       
+            <CardHeader>
+              <div className="text-sm font-medium text-slate-900">Credentials</div>
+              <div className="mt-1 text-xs text-slate-500">
+                Session is stored in HTTP-only cookies.
+              </div>
+            </CardHeader>
             <CardContent>
               <form className="space-y-4" onSubmit={onSubmit}>
                 <Input
