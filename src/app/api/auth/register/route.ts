@@ -4,6 +4,13 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { signAccessToken, signRefreshToken } from "@/lib/jwt";
+import {
+  ACCESS_COOKIE,
+  REFRESH_COOKIE,
+  accessMaxAgeSeconds,
+  cookieOptions,
+  refreshMaxAgeSeconds,
+} from "@/lib/auth-cookies";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -44,13 +51,23 @@ export async function POST(request: Request) {
   const accessToken = signAccessToken(payload);
   const refreshToken = signRefreshToken(payload);
 
-  return NextResponse.json(
+  const res = NextResponse.json(
     {
-      user: { id: user._id.toString(), name: user.name, email: user.email, role: user.role },
-      accessToken,
-      refreshToken,
+      user: {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     },
     { status: 201 }
   );
+  res.cookies.set(ACCESS_COOKIE, accessToken, cookieOptions(accessMaxAgeSeconds()));
+  res.cookies.set(
+    REFRESH_COOKIE,
+    refreshToken,
+    cookieOptions(refreshMaxAgeSeconds())
+  );
+  return res;
 }
 

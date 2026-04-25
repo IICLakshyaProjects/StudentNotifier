@@ -10,14 +10,19 @@ Location: {{5}}
 
 Please keep your admission card ready and confirm once received.`;
 
-export function buildCounsellingMessage({
-  studentName,
-  campus,
-  date,
-  time,
-  location,
-  template = DEFAULT_TEMPLATE,
-} = {}) {
+export type CounsellingMessageInput = {
+  studentName: string;
+  campus: string;
+  date: string;
+  time: string;
+  location: string;
+  template?: string;
+};
+
+export function buildCounsellingMessage(input: CounsellingMessageInput) {
+  const { studentName, campus, date, time, location, template = DEFAULT_TEMPLATE } =
+    input;
+
   return renderNumberedTemplate(template, [
     studentName,
     campus,

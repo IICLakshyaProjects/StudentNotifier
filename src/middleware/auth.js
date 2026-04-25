@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import User from "@/models/User";
 import { verifyAccessToken } from "@/lib/jwt";
+import { ACCESS_COOKIE, getCookieFromRequest } from "@/lib/auth-cookies";
 
 function getBearerToken(request) {
   const authHeader = request.headers.get("authorization") || "";
@@ -11,7 +12,8 @@ function getBearerToken(request) {
 }
 
 export async function getAuthUser(request) {
-  const token = getBearerToken(request);
+  const token =
+    getBearerToken(request) || getCookieFromRequest(request, ACCESS_COOKIE);
   if (!token) return null;
 
   let decoded;

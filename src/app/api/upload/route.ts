@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Readable } from "node:stream";
 
-import xlsx from "xlsx";
+import * as xlsx from "xlsx";
 import csvParser from "csv-parser";
 
 import connectDB from "@/lib/db";
@@ -30,17 +30,19 @@ const REQUIRED_COLUMNS = [
   "Location Link",
 ];
 
-function toBuffer(file: File) {
+function toBuffer(file: File): Promise<Buffer> {
   return file.arrayBuffer().then((ab) => Buffer.from(ab));
 }
 
-function normalizeHeader(h) {
+function normalizeHeader(h: unknown): string {
   return String(h ?? "").trim();
 }
 
-function parseCsv(buffer: Buffer) {
-  return new Promise<any[]>((resolve, reject) => {
-    const rows: any[] = [];
+type RowRecord = Record<string, unknown>;
+
+function parseCsv(buffer: Buffer): Promise<RowRecord[]> {
+  return new Promise<RowRecord[]>((resolve, reject) => {
+    const rows: RowRecord[] = [];
     const stream = Readable.from(buffer);
     stream
       .pipe(
@@ -56,22 +58,22 @@ function parseCsv(buffer: Buffer) {
   });
 }
 
-function parseExcel(buffer: Buffer) {
+function parseExcel(buffer: Buffer): RowRecord[] {
   const wb = xlsx.read(buffer, { type: "buffer" });
   const sheetName = wb.SheetNames[0];
   const ws = wb.Sheets[sheetName];
-  const json = xlsx.utils.sheet_to_json(ws, { defval: "" });
+  const json = xlsx.utils.sheet_to_json<RowRecord>(ws, { defval: "" });
   // sheet_to_json returns keys exactly as headers in row 1
   return json.map((row) => {
-    const out: any = {};
-    for (const [k, v] of Object.entries(row as any)) {
+    const out: RowRecord = {};
+    for (const [k, v] of Object.entries(row)) {
       out[normalizeHeader(k)] = v;
     }
     return out;
   });
 }
 
-function validateColumns(rows: any[]) {
+function validateColumns(rows: RowRecord[]) {
   const headers = new Set<string>();
   for (const row of rows.slice(0, 5)) {
     Object.keys(row || {}).forEach((k) => headers.add(k));
@@ -88,7 +90,16 @@ async function sendOne({
   record,
   authUserId,
 }: {
-  record: any;
+  record: {
+    studentName: string;
+    parentName?: string;
+    email: string;
+    whatsapp: string;
+    campus: string;
+    date: string;
+    time: string;
+    location: string;
+  };
   authUserId: any;
 }) {
   const studentName = normalizeString(record.studentName);
@@ -168,7 +179,7 @@ export async function POST(request: Request) {
   const name = (file as any).name?.toString?.() || "upload";
   const lower = name.toLowerCase();
 
-  let rows: any[] = [];
+  let rows: RowRecord[] = [];
   if (lower.endsWith(".csv")) {
     rows = await parseCsv(buffer);
   } else if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
@@ -193,7 +204,16 @@ export async function POST(request: Request) {
   }
 
   // Convert to internal shape + validate each row
-  const records: any[] = [];
+  const records: Array<{
+    studentName: string;
+    parentName?: string;
+    email: string;
+    whatsapp: string;
+    campus: string;
+    date: string;
+    time: string;
+    location: string;
+  }> = [];
   const rowErrors: Array<{ row: number; errors: string[] }> = [];
 
   rows.forEach((row, idx) => {
