@@ -187,7 +187,7 @@ Please keep your admission card ready and confirm once received.
 
 ---
 
-## 11. Single Send API
+## 11. Single Send API ✅ Completed
 
 ### Endpoint:
 
@@ -217,7 +217,7 @@ Please keep your admission card ready and confirm once received.
 
 ---
 
-## 12. Bulk Upload (CSV / Excel)
+## 12. Bulk Upload (CSV / Excel) ✅ Completed
 
 ### Endpoint:
 
@@ -243,7 +243,7 @@ Please keep your admission card ready and confirm once received.
 
 ---
 
-## 13. Bulk Send Logic
+## 13. Bulk Send Logic ✅ Completed
 
 * Process in batches (e.g., 50 records)
 * Add delay between requests (avoid blocking)
@@ -255,11 +255,16 @@ Please keep your admission card ready and confirm once received.
 
 ### Pages:
 
-* Login
+user login
+* Login (/auth/login)
 * Send Single Message
 * Upload Bulk File
 * View Logs
 
+Admin login (/admin/login)
+
+. user management (CRUD with pagination)
+. RUD of message
 ---
 
 ## 15. Security Requirements
