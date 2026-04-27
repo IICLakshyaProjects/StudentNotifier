@@ -97,13 +97,16 @@ export function generateCounsellingSessionTemplate(data) {
           <td align="center" style="padding:20px 12px;">
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="700" style="width:700px;max-width:700px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.12);">
               <tr>
-                <td style="padding:0;">
-                  <img src="${escapeHtml(bannerUrl)}" alt="" width="700" style="display:block;width:100%;max-width:700px;height:auto;border:0;outline:none;text-decoration:none;">
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:18px 22px 0 22px;">
-                  <img src="cid:lakshya-logo" alt="Lakshya Logo" height="52" style="display:block;height:52px;width:auto;border:0;outline:none;text-decoration:none;">
+                <td
+                  bgcolor="#0f766e"
+                  style="padding:28px 22px;background:#0f766e;background-image:linear-gradient(90deg,#0b7285 0%,#16a34a 55%,#facc15 120%);"
+                >
+                  <img
+                    src="cid:lakshya-logo"
+                    alt="Lakshya Logo"
+                    height="46"
+                    style="display:block;height:46px;width:auto;border:0;outline:none;text-decoration:none;"
+                  >
                 </td>
               </tr>
               <tr>

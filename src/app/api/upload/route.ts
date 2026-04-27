@@ -11,6 +11,7 @@ import { buildCounsellingEmailHtml, buildCounsellingMessage } from "@/lib/messag
 import { sendWhatsApp } from "@/lib/infinito";
 import { sendEmail } from "@/lib/mailer";
 import { isInfinitoSynqEnabled } from "@/lib/feature-flags";
+import path from "node:path";
 import {
   isEmail,
   normalizeEmail,
@@ -163,6 +164,13 @@ async function sendOne({
       subject: "Counselling session confirmed",
       text,
       html,
+      attachments: [
+        {
+          filename: "WHITE.png",
+          path: path.join(process.cwd(), "public", "WHITE.png"),
+          cid: "lakshya-logo",
+        },
+      ],
     });
   } catch (e: any) {
     status = "failed";
