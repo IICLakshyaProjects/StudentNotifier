@@ -24,6 +24,7 @@ export function SendPanel() {
     campus: "",
     date: "",
     time: "",
+    address: "",
     location: "",
   });
   const [isLoading, setIsLoading] = React.useState(false);
@@ -57,14 +58,15 @@ export function SendPanel() {
   const previewStudentName = form.studentName || "Student name";
   const previewCampus = form.campus || "Campus";
   const previewDateTime = form.date || form.time ? `${form.date || "Date"} · ${form.time || "Time"}` : "Date · Time";
+  const previewAddress = form.address || "Address";
   const previewLocation = form.location || "Location";
   const previewUrl = `/dashboard/preview?studentName=${encodeURIComponent(
     form.studentName || ""
   )}&campus=${encodeURIComponent(form.campus || "")}&date=${encodeURIComponent(
     form.date || ""
-  )}&time=${encodeURIComponent(form.time || "")}&location=${encodeURIComponent(
-    form.location || ""
-  )}`;
+  )}&time=${encodeURIComponent(form.time || "")}&address=${encodeURIComponent(
+    form.address || ""
+  )}&location=${encodeURIComponent(form.location || "")}`;
 
   async function downloadPreviewImage() {
     if (!previewRef.current) return;
@@ -177,6 +179,16 @@ export function SendPanel() {
                   placeholder="https://…"
                 />
               </div>
+              <div className="sm:col-span-2">
+                <Input
+                  label="Address"
+                  value={form.address}
+                  onChange={(e) =>
+                    setForm({ ...form, address: e.target.value })
+                  }
+                  placeholder="Campus address"
+                />
+              </div>
 
               <div className="sm:col-span-2 mt-2 flex flex-wrap items-center gap-3">
                 <Button type="button">
@@ -193,6 +205,7 @@ export function SendPanel() {
                       campus: "",
                       date: "",
                       time: "",
+                      address: "",
                       location: "",
                     })
                   }
@@ -300,6 +313,7 @@ export function SendPanel() {
                   studentName={previewStudentName}
                   campus={previewCampus}
                   dateTime={previewDateTime}
+                  address={previewAddress}
                   location={previewLocation}
                 />
                 <div className="mt-4 flex justify-end">
