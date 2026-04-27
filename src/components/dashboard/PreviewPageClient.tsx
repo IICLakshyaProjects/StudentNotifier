@@ -94,9 +94,13 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
       if (!ClipboardItemCtor || !navigator.clipboard?.write) {
         throw new Error("clipboard not supported");
       }
-      const item = new ClipboardItemCtor({ "image/png": blob });
+      const parts: Record<string, Blob> = { "image/png": blob };
+      if (locationHref) {
+        parts["text/plain"] = new Blob([locationHref], { type: "text/plain" });
+      }
+      const item = new ClipboardItemCtor(parts);
       await navigator.clipboard.write([item]);
-      showToast("Image copied. Paste it in WhatsApp Web.");
+      showToast(locationHref ? "Image + location copied. Paste it in WhatsApp Web." : "Image copied. Paste it in WhatsApp Web.");
     } catch {
       showToast("Copy not supported in this browser. Use Download PNG.");
     } finally {

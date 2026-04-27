@@ -17,6 +17,8 @@ export type CounsellingMessageInput = {
   date: string;
   time: string;
   location: string;
+  address?: string;
+  baseUrl?: string;
   template?: string;
 };
 
@@ -35,9 +37,11 @@ export function buildCounsellingMessage(input: CounsellingMessageInput) {
 
 export function buildCounsellingEmailHtml(input: CounsellingMessageInput) {
   return generateCounsellingSessionTemplate({
+    baseUrl: input.baseUrl,
     studentName: input.studentName,
     campus: input.campus,
     dateTime: `${input.date} · ${input.time}`,
+    address: input.address,
     location: input.location,
   });
 }

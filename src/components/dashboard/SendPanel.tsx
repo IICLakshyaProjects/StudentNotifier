@@ -174,9 +174,13 @@ export function SendPanel() {
       if (!ClipboardItemCtor || !navigator.clipboard?.write) {
         throw new Error("clipboard not supported");
       }
-      const item = new ClipboardItemCtor({ "image/png": blob });
+      const parts: Record<string, Blob> = { "image/png": blob };
+      if (previewLocationHref) {
+        parts["text/plain"] = new Blob([previewLocationHref], { type: "text/plain" });
+      }
+      const item = new ClipboardItemCtor(parts);
       await navigator.clipboard.write([item]);
-      showToast("Image copied. Paste it where you need.");
+      showToast(previewLocationHref ? "Image + location copied. Paste it where you need." : "Image copied. Paste it where you need.");
     } catch {
       showToast("Copy not supported here. Use Download PNG.");
     } finally {
