@@ -1,9 +1,12 @@
 "use client";
 
 import * as React from "react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { TemplatePreview } from "@/components/dashboard/TemplatePreview";
 import { apiFetch } from "@/lib/auth-client";
 
 type SendResponse = {
@@ -24,11 +27,16 @@ export function SendPanel() {
     location: "",
   });
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isExporting, setIsExporting] = React.useState(false);
   const [result, setResult] = React.useState<SendResponse | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const previewRef = React.useRef<HTMLDivElement | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+  }
+
+  async function sendMessage() {
     setError(null);
     setResult(null);
     setIsLoading(true);
@@ -39,10 +47,59 @@ export function SendPanel() {
       });
       setResult(res);
       if (res.ok) setIsOpen(false);
-    } catch (err: any) {
-      setError(err?.message || "Send failed");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Send failed");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  const previewStudentName = form.studentName || "Student name";
+  const previewCampus = form.campus || "Campus";
+  const previewDateTime = form.date || form.time ? `${form.date || "Date"} · ${form.time || "Time"}` : "Date · Time";
+  const previewLocation = form.location || "Location";
+  const previewUrl = `/dashboard/preview?studentName=${encodeURIComponent(
+    form.studentName || ""
+  )}&campus=${encodeURIComponent(form.campus || "")}&date=${encodeURIComponent(
+    form.date || ""
+  )}&time=${encodeURIComponent(form.time || "")}&location=${encodeURIComponent(
+    form.location || ""
+  )}`;
+
+  async function downloadPreviewImage() {
+    if (!previewRef.current) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+      });
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = "counselling-session-preview.png";
+      link.click();
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function downloadPreviewPdf() {
+    if (!previewRef.current) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+      });
+      const imageData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] });
+      pdf.addImage(imageData, "PNG", 0, 0, canvas.width, canvas.height);
+      pdf.save("counselling-session-preview.pdf");
+    } finally {
+      setIsExporting(false);
     }
   }
 
@@ -122,8 +179,8 @@ export function SendPanel() {
               </div>
 
               <div className="sm:col-span-2 mt-2 flex flex-wrap items-center gap-3">
-                <Button type="submit" isLoading={isLoading}>
-                  Send
+                <Button type="button">
+                  Update preview
                 </Button>
                 <Button
                   type="button"
@@ -155,7 +212,7 @@ export function SendPanel() {
             If something fails, you’ll see why here.
           </div>
         </div>
-        <div className="p-4">
+        <div className="p-4 space-y-4">
           {error ? (
             <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {error}
@@ -189,9 +246,72 @@ export function SendPanel() {
           ) : (
             <div className="text-sm text-slate-600">Ready when you are.</div>
           )}
+
+          <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm">
+            <div className="border-b border-slate-200/70 p-4">
+              <div className="text-sm font-semibold text-slate-900">Template preview</div>
+              <div className="mt-1 text-xs text-slate-500">
+                Live preview of the email card. Download as image or PDF.
+              </div>
+            </div>
+
+            <div className="p-4 space-y-4">
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                <div className="text-sm text-slate-600">
+                  This preview updates as you fill the form.
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={downloadPreviewImage}
+                    disabled={isExporting}
+                  >
+                    Download PNG
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={downloadPreviewPdf}
+                    disabled={isExporting}
+                  >
+                    Download PDF
+                  </Button>
+                </div>
+              </div>
+
+              <div className="lg:hidden rounded-3xl border border-slate-200/70 bg-slate-50 p-4">
+                <div className="text-sm text-slate-700">
+                  Preview is available on a separate page when space is limited.
+                </div>
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Open preview page
+                </a>
+              </div>
+
+              <div className="hidden lg:block">
+                <TemplatePreview
+                  ref={previewRef}
+                  studentName={previewStudentName}
+                  campus={previewCampus}
+                  dateTime={previewDateTime}
+                  location={previewLocation}
+                />
+                <div className="mt-4 flex justify-end">
+                  <Button type="button" isLoading={isLoading} onClick={sendMessage}>
+                    Send
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </div>
   );
 }
-
