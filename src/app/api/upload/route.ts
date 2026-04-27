@@ -264,6 +264,23 @@ export async function POST(request: Request) {
     });
   });
 
+  const maxRecordsEnv = Number(process.env.BULK_MAX_RECORDS || 0);
+  const maxRecords =
+    Number.isFinite(maxRecordsEnv) && maxRecordsEnv > 0 ? maxRecordsEnv : null;
+
+  if (maxRecords && records.length > maxRecords) {
+    return NextResponse.json(
+      {
+        error: `too many records (max ${maxRecords})`,
+        maxRecords,
+        validRecords: records.length,
+        invalidRows: rowErrors.length,
+        rowErrors,
+      },
+      { status: 400 }
+    );
+  }
+
   if (!records.length) {
     return NextResponse.json(
       { error: "no valid rows found", rowErrors },
