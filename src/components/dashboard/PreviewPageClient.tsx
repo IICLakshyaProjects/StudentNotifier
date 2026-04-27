@@ -12,10 +12,11 @@ type PreviewPageClientProps = {
   studentName: string;
   campus: string;
   dateTime: string;
+  address: string;
   location: string;
 };
 
-export function PreviewPageClient({ studentName, campus, dateTime, location }: PreviewPageClientProps) {
+export function PreviewPageClient({ studentName, campus, dateTime, address, location }: PreviewPageClientProps) {
   const previewRef = React.useRef<HTMLDivElement | null>(null);
   const [isExporting, setIsExporting] = React.useState(false);
 
@@ -90,6 +91,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, location }: P
           studentName={studentName}
           campus={campus}
           dateTime={dateTime}
+          address={address}
           location={location}
         />
       </div>

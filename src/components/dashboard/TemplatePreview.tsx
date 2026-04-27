@@ -4,11 +4,20 @@ type TemplatePreviewProps = {
   studentName: string;
   campus: string;
   dateTime: string;
+  address: string;
   location: string;
 };
 
 export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewProps>(
-  function TemplatePreview({ studentName, campus, dateTime, location }, ref) {
+  function TemplatePreview({ studentName, campus, dateTime, address, location }, ref) {
+    const locationHref = (() => {
+      const value = location.trim();
+      if (!value) return "";
+      if (value === "Location" || value === "[Location]" || value.startsWith("[")) return "";
+      if (/^https?:\/\//i.test(value)) return value;
+      return `https://${value}`;
+    })();
+
     return (
       <div
         ref={ref}
@@ -81,42 +90,82 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
                   <div>{dateTime}</div>
                 </div>
                 <div>
+                  <div style={{ fontWeight: 700, color: "#0F172A" }}>Address</div>
+                  <div>{address}</div>
+                </div>
+                <div>
                   <div style={{ fontWeight: 700, color: "#0F172A" }}>Location</div>
-                  <div style={{ marginTop: 8 }}>
-                    <div>{location}</div>
-                  </div>
+                  <div style={{ marginTop: 8 }}>{location}</div>
                 </div>
               </div>
             </div>
 
-            <div
-              style={{
-                position: "absolute",
-                top: 24,
-                right: 24,
-                bottom: 24,
-                width: "clamp(120px, 34vw, 220px)",
-                borderRadius: 30,
-                background: "rgba(255,255,255,0.06)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 12,
-              }}
-            >
-              <img
-                src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png"
-                alt="Admission card"
+            {locationHref ? (
+              <a
+                href={locationHref}
+                target="_blank"
+                rel="noreferrer"
                 style={{
-                  width: "100%",
-                  height: "auto",
-                  objectFit: "contain",
-                  objectPosition: "center",
-                  display: "block",
-                  maxHeight: "100%",
+                  position: "absolute",
+                  top: 24,
+                  right: 24,
+                  bottom: 24,
+                  width: "clamp(120px, 34vw, 220px)",
+                  borderRadius: 30,
+                  background: "rgba(255,255,255,0.04)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  overflow: "hidden",
+                  textDecoration: "none",
                 }}
-              />
-            </div>
+                aria-label="Open location from image"
+              >
+                <img
+                  src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png"
+                  alt="Admission card"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                    display: "block",
+                    maxHeight: "100%",
+                  }}
+                />
+              </a>
+            ) : (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 24,
+                  right: 24,
+                  bottom: 24,
+                  width: "clamp(120px, 34vw, 220px)",
+                  borderRadius: 30,
+                  background: "rgba(255,255,255,0.04)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  overflow: "hidden",
+                }}
+              >
+                <img
+                  src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png"
+                  alt="Admission card"
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    objectFit: "contain",
+                    objectPosition: "center",
+                    display: "block",
+                    maxHeight: "100%",
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div

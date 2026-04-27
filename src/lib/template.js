@@ -54,8 +54,16 @@ export function generateCounsellingSessionTemplate(data) {
     studentName = "Student",
     campus = "[Campus]",
     dateTime = "[Date and Time]",
+    address = "[Address]",
     location = "[Location]",
   } = data || {};
+  const locationHref = (() => {
+    const value = String(location || "").trim();
+    if (!value) return "";
+    if (value === "Location" || value === "[Location]" || value.startsWith("[")) return "";
+    if (/^https?:\/\//i.test(value)) return value;
+    return `https://${value}`;
+  })();
 
   return `
     <!DOCTYPE html>
@@ -138,9 +146,10 @@ export function generateCounsellingSessionTemplate(data) {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.04);
           border-radius: 18px;
-          padding: 10px;
+          padding: 0;
+          overflow: hidden;
         }
         .admission-card-image {
           width: 100%;
@@ -233,15 +242,21 @@ export function generateCounsellingSessionTemplate(data) {
                   <div class="detail-value">${escapeHtml(dateTime)}</div>
                 </div>
                 <div class="detail-item">
+                  <div class="detail-label">Address</div>
+                  <div class="detail-value">${escapeHtml(address)}</div>
+                </div>
+                <div class="detail-item">
                   <div class="detail-label">Location</div>
                   <div class="detail-value">${escapeHtml(location)}</div>
                 </div>
               </div>
               
               <!-- Admission Card Image on Right -->
-              <div class="admission-card-image-container">
-                <img src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png" alt="Admission Card" class="admission-card-image">
-              </div>
+              ${
+                locationHref
+                  ? `<a class="admission-card-image-container" href="${escapeHtml(locationHref)}" target="_blank" rel="noreferrer" aria-label="Open location from image"><img src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png" alt="Admission Card" class="admission-card-image"></a>`
+                  : `<div class="admission-card-image-container"><img src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png" alt="Admission Card" class="admission-card-image"></div>`
+              }
             </div>
           </div>
 
