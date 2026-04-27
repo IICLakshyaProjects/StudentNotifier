@@ -88,6 +88,28 @@ export default function LoginPage() {
                 <Button type="submit" className="w-full" isLoading={isLoading}>
                   Sign in
                 </Button>
+
+                <div className="relative py-2">
+                  <div className="h-px w-full bg-slate-200/70" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="bg-white/70 px-2 text-xs text-slate-500">
+                      or
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => {
+                    window.location.href =
+                      "/api/auth/google/start?returnTo=" +
+                      encodeURIComponent("/dashboard");
+                  }}
+                >
+                  Sign in with Google
+                </Button>
               </form>
             </CardContent>
           </Card>
