@@ -176,7 +176,8 @@ export function SendPanel() {
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (previewLocationHref) {
-        parts["text/plain"] = new Blob([previewLocationHref], { type: "text/plain" });
+        const text = `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`;
+        parts["text/plain"] = new Blob([text], { type: "text/plain" });
       }
       const item = new ClipboardItemCtor(parts);
       await navigator.clipboard.write([item]);
@@ -191,8 +192,9 @@ export function SendPanel() {
   async function copyLocationLink() {
     if (!previewLocationHref) return;
     try {
-      await navigator.clipboard.writeText(previewLocationHref);
-      showToast("Link copied.");
+      const text = `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`;
+      await navigator.clipboard.writeText(text);
+      showToast("Text + link copied.");
     } catch {
       showToast("Could not copy link.");
     }
@@ -432,7 +434,17 @@ export function SendPanel() {
                 <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/70 p-4">
                   <div className="text-sm font-semibold text-slate-900">Location</div>
                   <div className="mt-1 text-sm text-slate-600 break-words">
-                    {previewLocation}
+                    {previewLocationHref ? (
+                      <>
+                        Please find the campus location for{" "}
+                        <span className="font-semibold text-slate-900">
+                          {previewCampus}
+                        </span>{" "}
+                        here.
+                      </>
+                    ) : (
+                      previewLocation
+                    )}
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     {previewLocationHref ? (

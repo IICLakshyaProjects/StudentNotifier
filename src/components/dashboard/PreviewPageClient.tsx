@@ -96,7 +96,8 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (locationHref) {
-        parts["text/plain"] = new Blob([locationHref], { type: "text/plain" });
+        const text = `Please find the campus location for ${campus} here: ${locationHref}`;
+        parts["text/plain"] = new Blob([text], { type: "text/plain" });
       }
       const item = new ClipboardItemCtor(parts);
       await navigator.clipboard.write([item]);
@@ -111,8 +112,9 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
   async function copyLocationLink() {
     if (!locationHref) return;
     try {
-      await navigator.clipboard.writeText(locationHref);
-      showToast("Link copied.");
+      const text = `Please find the campus location for ${campus} here: ${locationHref}`;
+      await navigator.clipboard.writeText(text);
+      showToast("Text + link copied.");
     } catch {
       showToast("Could not copy link.");
     }
@@ -179,7 +181,17 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
 
       <div className="rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm shadow-slate-900/5">
         <div className="text-sm font-semibold text-slate-900">Location</div>
-        <div className="mt-1 text-sm text-slate-600 break-words">{location}</div>
+        <div className="mt-1 text-sm text-slate-600 break-words">
+          {locationHref ? (
+            <>
+              Please find the campus location for{" "}
+              <span className="font-semibold text-slate-900">{campus}</span>{" "}
+              here.
+            </>
+          ) : (
+            location
+          )}
+        </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {locationHref ? (
             <>
