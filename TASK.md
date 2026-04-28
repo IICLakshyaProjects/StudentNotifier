@@ -1,17 +1,3 @@
-Create an admin panel ✅ Completed
-
-- /admin/login ✅ Completed
-- After login show admin dashboard (admin-only) ✅ Completed
-
-In admin dashboard ✅ Completed
-
-1. Add User management (list with pagination in frontend and backend, edit and delete icon) ✅ Completed
-2. Fields (create configurable fields with type) ✅ Completed
-
-Dynamic fields propagation ✅ Completed
-
-- Fields appear in `/admin/dashboard/fields` ✅ Completed
-- Fields appear in `/dashboard?tab=send` form ✅ Completed
-- Fields appear inside the preview image/card ✅ Completed
-- Fields appear in sample CSV download ✅ Completed
-- Fields are included in email for both single send and bulk send ✅ Completed
+1. In admin panel `/admin/dashboard/fields` reduce the size of edit and delete button ✅ Completed
+2. When sending email, after Location there is an “Admission Card” image/button block — remove it ✅ Completed
+3. Add custom favicon from `public/favicon.png` ✅ Completed

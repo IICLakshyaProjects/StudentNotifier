@@ -174,16 +174,6 @@ export function generateCounsellingSessionTemplate(data) {
                                     : `${escapeHtml(location)}`
                                 }
                               </div>
-
-                              <div style="margin-top:16px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px;text-align:center;">
-                                ${
-                                  locationHref
-                                    ? `<a href="${escapeHtml(locationHref)}" target="_blank" rel="noreferrer" style="display:inline-block;text-decoration:none;">
-                                         <img src="${escapeHtml(cardImageUrl)}" alt="Admission Card" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;margin:0 auto;">
-                                       </a>`
-                                    : `<img src="${escapeHtml(cardImageUrl)}" alt="Admission Card" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;margin:0 auto;">`
-                                }
-                              </div>
                             </td>
                           </tr>
                         </table>

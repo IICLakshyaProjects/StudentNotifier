@@ -289,6 +289,7 @@ export default function AdminFieldsPage() {
                       <div className="flex justify-end gap-2">
                         <IconButton
                           title="Edit"
+                          size="sm"
                           onClick={() => {
                             setEditing(f);
                             setEditForm({
@@ -301,10 +302,10 @@ export default function AdminFieldsPage() {
                             });
                           }}
                         >
-                          <PencilIcon />
+                          <PencilIcon className="w-4 h-4" />
                         </IconButton>
-                        <IconButton title="Delete" variant="danger" onClick={() => deleteField(f._id)}>
-                          <TrashIcon />
+                        <IconButton title="Delete" size="sm" variant="danger" onClick={() => deleteField(f._id)}>
+                          <TrashIcon className="w-4 h-4"/>
                         </IconButton>
                       </div>
                     </td>
