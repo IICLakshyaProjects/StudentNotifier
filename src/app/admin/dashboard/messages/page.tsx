@@ -8,6 +8,7 @@ import { apiFetch } from "@/lib/auth-client";
 
 type MessageItem = {
   id: string;
+  sessionId?: string;
   studentName: string;
   parentName?: string;
   email: string;
@@ -111,6 +112,23 @@ export default function AdminMessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function clearAll() {
+    const ok = confirm(
+      "This will permanently delete ALL messages.\n\nAre you sure you want to continue?"
+    );
+    if (!ok) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      await apiFetch("/api/admin/messages", { method: "DELETE" });
+      await load(1);
+    } catch (e: any) {
+      setError(e?.message || "Failed to clear messages");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -122,8 +140,19 @@ export default function AdminMessagesPage() {
             Search and review message activity.
           </div>
         </div>
-        <div className="text-xs text-slate-500">
-          {isLoading ? "Loading…" : `Showing ${items.length} results`}
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <div className="text-xs text-slate-500">
+            {isLoading ? "Loading…" : `Showing ${items.length} results`}
+          </div>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            onClick={clearAll}
+            disabled={isLoading || total === 0}
+          >
+            Clear all
+          </Button>
         </div>
       </div>
 
@@ -176,6 +205,7 @@ export default function AdminMessagesPage() {
             <thead className="bg-white/50 text-xs text-slate-600">
               <tr>
                 <th className="px-4 py-3 font-medium">Student</th>
+                <th className="px-4 py-3 font-medium">Session ID</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Phone</th>
                 <th className="px-4 py-3 font-medium">Campus</th>
@@ -197,6 +227,9 @@ export default function AdminMessagesPage() {
                       </div>
                     ) : null}
                   </td>
+                  <td className="px-4 py-3 font-mono text-xs text-slate-600">
+                    {m.sessionId || "—"}
+                  </td>
                   <td className="px-4 py-3 text-slate-700">{m.email}</td>
                   <td className="px-4 py-3 text-slate-700">{m.phone}</td>
                   <td className="px-4 py-3 text-slate-700">{m.campus || "—"}</td>
@@ -211,7 +244,7 @@ export default function AdminMessagesPage() {
               ))}
               {items.length === 0 && !isLoading ? (
                 <tr>
-                  <td className="px-4 py-10 text-sm text-slate-600" colSpan={7}>
+                  <td className="px-4 py-10 text-sm text-slate-600" colSpan={8}>
                     No messages found.
                   </td>
                 </tr>

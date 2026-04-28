@@ -11,9 +11,34 @@ import { apiFetch } from "@/lib/auth-client";
 
 type SendResponse = {
   ok: boolean;
-  message: { id: string; status: "sent" | "failed" };
+  message: { id: string; status: "sent" | "failed"; sessionId?: string };
   errors: string[];
 };
+
+type FieldType =
+  | "text"
+  | "email"
+  | "tel"
+  | "url"
+  | "password"
+  | "number"
+  | "date"
+  | "time";
+
+type PublicField = {
+  _id: string;
+  label: string;
+  key: string;
+  type: FieldType;
+  required: boolean;
+  enabled: boolean;
+  order: number;
+};
+
+type FieldsResponse = { ok: true; fields: PublicField[] };
+
+type CampusDto = { _id: string; name: string; slug: string; nextSequence?: number };
+type CampusesResponse = { ok: true; campuses: CampusDto[] };
 
 function campusSlug(campus: string) {
   const cleaned = campus.replace(/[^a-z0-9]+/gi, "");
@@ -50,6 +75,9 @@ function formatTime12h(hhmm: string) {
 
 export function SendPanel() {
   const [isOpen, setIsOpen] = React.useState(true);
+  const [fields, setFields] = React.useState<PublicField[]>([]);
+  const [campuses, setCampuses] = React.useState<CampusDto[]>([]);
+  const [sentSessionId, setSentSessionId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState({
     studentName: "",
     email: "",
@@ -60,6 +88,7 @@ export function SendPanel() {
     time: "",
     address: "",
     location: "",
+    extraFields: {} as Record<string, string>,
   });
   const [isLoading, setIsLoading] = React.useState(false);
   const [isExporting, setIsExporting] = React.useState(false);
@@ -87,13 +116,32 @@ export function SendPanel() {
         json: form,
       });
       setResult(res);
-      if (res.ok) setIsOpen(false);
+      if (res.ok) {
+        setSentSessionId(res.message.sessionId || null);
+        setIsOpen(false);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Send failed");
     } finally {
       setIsLoading(false);
     }
   }
+
+  React.useEffect(() => {
+    fetch("/api/fields", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: FieldsResponse) => setFields(Array.isArray(data?.fields) ? data.fields : []))
+      .catch(() => setFields([]));
+  }, []);
+
+  React.useEffect(() => {
+    fetch("/api/campuses", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: CampusesResponse) =>
+        setCampuses(Array.isArray(data?.campuses) ? data.campuses : [])
+      )
+      .catch(() => setCampuses([]));
+  }, []);
 
   const previewStudentName = form.studentName || "Student name";
   const previewCampus = form.campus || "Campus";
@@ -104,10 +152,19 @@ export function SendPanel() {
       : "Date · Time";
   const previewAddress = form.address || "Address";
   const previewLocation = form.location || "Location";
-  const previewContactNumber = form.contactNumber || form.whatsapp || "";
-  const previewSessionId = `LAK${campusSlug(previewCampus)}${hashTo6Digits(
-    `${previewStudentName}|${previewCampus}|${previewDateTime}|${previewAddress}|${previewLocation}`
-  )}`;
+  const previewContactNumber = form.contactNumber || "";
+  const previewExtraFields = fields
+    .filter((f) => f.enabled)
+    .map((f) => ({
+      label: f.label,
+      value: String(form.extraFields?.[f.key] || ""),
+    }));
+  const campusInfo = campuses.find((c) => c.name === form.campus);
+  const nextSeq = Number.isFinite(Number(campusInfo?.nextSequence))
+    ? Number(campusInfo?.nextSequence)
+    : 1;
+  const predictedSessionId = `LAK${campusSlug(previewCampus)}${String(nextSeq).padStart(5, "0")}`;
+  const previewSessionId = sentSessionId || predictedSessionId;
   const previewLocationHref = toLocationHref(previewLocation);
   const previewUrl = `/dashboard/preview?studentName=${encodeURIComponent(
     form.studentName || ""
@@ -176,7 +233,13 @@ export function SendPanel() {
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (previewLocationHref) {
-        const text = `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`;
+        const lines = [
+          `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`,
+        ];
+        if (form.contactNumber?.trim()) {
+          lines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
+        }
+        const text = lines.join("\n");
         parts["text/plain"] = new Blob([text], { type: "text/plain" });
       }
       const item = new ClipboardItemCtor(parts);
@@ -192,7 +255,13 @@ export function SendPanel() {
   async function copyLocationLink() {
     if (!previewLocationHref) return;
     try {
-      const text = `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`;
+      const lines = [
+        `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`,
+      ];
+      if (form.contactNumber?.trim()) {
+        lines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
+      }
+      const text = lines.join("\n");
       await navigator.clipboard.writeText(text);
       showToast("Text + link copied.");
     } catch {
@@ -248,18 +317,33 @@ export function SendPanel() {
                 hint="Include country code if needed"
               />
               <Input
-                label="Contact number"
+                label="Campus Contact No"
                 value={form.contactNumber}
                 onChange={(e) =>
                   setForm({ ...form, contactNumber: e.target.value })
                 }
-                hint="Shown in the Important section"
+                hint="Used in the Important section"
               />
-              <Input
-                label="Campus"
-                value={form.campus}
-                onChange={(e) => setForm({ ...form, campus: e.target.value })}
-              />
+              <label className="block">
+                <div className="mb-1.5 text-sm font-medium text-slate-900">
+                  Campus
+                </div>
+                <select
+                  className="h-11 w-full rounded-xl border border-slate-200/80 bg-white/80 px-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 backdrop-blur focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+                  value={form.campus}
+                  onChange={(e) => setForm({ ...form, campus: e.target.value })}
+                >
+                  <option value="">Select campus…</option>
+                  {campuses.map((c) => (
+                    <option key={c._id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-1 text-xs text-slate-500">
+                  Managed in Admin → Campuses.
+                </div>
+              </label>
               <Input
                 label="Date"
                 type="date"
@@ -293,6 +377,32 @@ export function SendPanel() {
                 />
               </div>
 
+              {fields.length ? (
+                <div className="sm:col-span-2">
+                  <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                    {fields.map((f) => (
+                      <Input
+                        key={f._id}
+                        label={f.label}
+                        type={f.type}
+                        required={f.required}
+                        value={form.extraFields?.[f.key] || ""}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            extraFields: {
+                              ...(prev.extraFields || {}),
+                              [f.key]: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder={f.label}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="sm:col-span-2 mt-2 flex flex-wrap items-center gap-3">
                 <Button type="button">
                   Update preview
@@ -301,6 +411,7 @@ export function SendPanel() {
                   type="button"
                   variant="secondary"
                   onClick={() =>
+                    (setSentSessionId(null),
                     setForm({
                       studentName: "",
                       email: "",
@@ -311,7 +422,8 @@ export function SendPanel() {
                       time: "",
                       address: "",
                       location: "",
-                    })
+                      extraFields: {},
+                    }))
                   }
                 >
                   Clear
@@ -389,14 +501,6 @@ export function SendPanel() {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={copyPreviewImage}
-                    disabled={isExporting}
-                  >
-                    Copy image
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
                     onClick={downloadPreviewPdf}
                     disabled={isExporting}
                   >
@@ -429,6 +533,7 @@ export function SendPanel() {
                   location={previewLocation}
                   sessionId={previewSessionId}
                   contactNumber={previewContactNumber}
+                  extraFields={previewExtraFields}
                 />
 
                 <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/70 p-4">
@@ -457,6 +562,9 @@ export function SendPanel() {
                         >
                           Open location
                         </a>
+                        <Button type="button" variant="secondary" onClick={copyPreviewImage} disabled={isExporting}>
+                          Copy image
+                        </Button>
                         <Button type="button" variant="secondary" onClick={copyLocationLink}>
                           Copy link
                         </Button>

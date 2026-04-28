@@ -6,6 +6,8 @@ import csvParser from "csv-parser";
 
 import connectDB from "@/lib/db";
 import Message from "@/models/Message";
+import Field from "@/models/Field";
+import Campus from "@/models/Campus";
 import { requireAuth } from "@/middleware/auth";
 import { buildCounsellingEmailHtml, buildCounsellingMessage } from "@/lib/message";
 import { sendWhatsApp } from "@/lib/infinito";
@@ -26,6 +28,7 @@ const REQUIRED_COLUMNS = [
   "Student Name",
   "Parent Name",
   "WhatsApp No",
+  "Contact Number",
   "Campus",
   "Date",
   "Time",
@@ -103,6 +106,7 @@ async function sendOne({
     time: string;
     address?: string;
     location: string;
+    extraFields?: Record<string, unknown>;
   };
   authUserId: any;
 }) {
@@ -116,6 +120,30 @@ async function sendOne({
   const time = normalizeString(record.time);
   const address = normalizeString(record.address);
   const location = normalizeString(record.location);
+  const extraFields = record.extraFields && typeof record.extraFields === "object" ? record.extraFields : {};
+
+  const campusSlug =
+    campus.replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 10) || "CAMPUS";
+  const campusUpdated = await Campus.findOneAndUpdate(
+    { slug: campusSlug.toLowerCase() },
+    {
+      $setOnInsert: {
+        name: campus,
+        slug: campusSlug.toLowerCase(),
+        enabled: true,
+        order: 0,
+      },
+      $inc: { nextSequence: 1 },
+    },
+    {
+      upsert: true,
+      setDefaultsOnInsert: true,
+      returnDocument: "after",
+    }
+  ).lean();
+  const nextAfterInc = Number((campusUpdated as any)?.nextSequence || 2);
+  const seq = Math.max(1, nextAfterInc - 1);
+  const sessionId = `LAK${campusSlug}${String(seq).padStart(5, "0")}`;
 
   const text = buildCounsellingMessage({
     studentName,
@@ -133,6 +161,8 @@ async function sendOne({
     address,
     location,
     contactNumber,
+    extraFields,
+    sessionId,
   });
 
   const msg = await Message.create({
@@ -146,6 +176,8 @@ async function sendOne({
     address,
     location,
     contactNumber,
+    sessionId,
+    extraFields,
     status: "pending",
     createdBy: authUserId,
   });
@@ -242,8 +274,15 @@ export async function POST(request: Request) {
     date: string;
     time: string;
     location: string;
+    extraFields?: Record<string, unknown>;
   }> = [];
   const rowErrors: Array<{ row: number; errors: string[] }> = [];
+
+  await connectDB();
+  const configuredFields = await Field.find({ enabled: true })
+    .select("label required order createdAt")
+    .sort({ order: 1, createdAt: 1 })
+    .lean();
 
   rows.forEach((row, idx) => {
     const rowNum = idx + 2; // header row is 1
@@ -258,6 +297,12 @@ export async function POST(request: Request) {
     const time = normalizeString(row["Time"]);
     const location = normalizeString(row["Location Link"]);
 
+    const extraFields: Record<string, unknown> = {};
+    configuredFields.forEach((f) => {
+      const val = normalizeString((row as any)[f.label]);
+      if (val) extraFields[f.label] = val;
+    });
+
     const errs: string[] = [];
     if (!studentName) errs.push("Student Name is required");
     if (!email || !isEmail(email)) errs.push("valid email is required");
@@ -266,6 +311,12 @@ export async function POST(request: Request) {
     if (!date) errs.push("Date is required");
     if (!time) errs.push("Time is required");
     if (!location) errs.push("Location Link is required");
+    configuredFields.forEach((f) => {
+      if (f.required) {
+        const val = normalizeString((row as any)[f.label]);
+        if (!val) errs.push(`${f.label} is required`);
+      }
+    });
 
     if (errs.length) {
       rowErrors.push({ row: rowNum, errors: errs });
@@ -282,6 +333,7 @@ export async function POST(request: Request) {
       date,
       time,
       location,
+      extraFields,
     });
   });
 
@@ -319,8 +371,6 @@ export async function POST(request: Request) {
       rowErrors,
     });
   }
-
-  await connectDB();
 
   const batchSize = Number(process.env.BULK_BATCH_SIZE || 50);
   const delayMs = Number(process.env.BULK_DELAY_MS || 250);

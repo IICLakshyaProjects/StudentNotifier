@@ -4,12 +4,65 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/Button";
 
-const SAMPLE_CSV = `email,Student Name,Parent Name,WhatsApp No,Contact Number,Campus,Date,Time,Location Link
-student@example.com,John Doe,Mr Doe,+911234567890,+911234567890,Main Campus,2026-04-25,10:30,https://maps.google.com/?q=campus
-`;
+type FieldType =
+  | "text"
+  | "email"
+  | "tel"
+  | "url"
+  | "password"
+  | "number"
+  | "date"
+  | "time";
 
-function downloadSampleCsv() {
-  const blob = new Blob([SAMPLE_CSV], { type: "text/csv;charset=utf-8" });
+type PublicField = {
+  _id: string;
+  label: string;
+  key: string;
+  type: FieldType;
+  required: boolean;
+  enabled: boolean;
+  order: number;
+};
+
+type FieldsResponse = { ok: true; fields: PublicField[] };
+
+function csvEscape(value: string) {
+  const s = String(value ?? "");
+  if (/[",\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
+  return s;
+}
+
+function downloadSampleCsv(fields: PublicField[]) {
+  const baseHeaders = [
+    "email",
+    "Student Name",
+    "Parent Name",
+    "WhatsApp No",
+    "Contact Number",
+    "Campus",
+    "Date",
+    "Time",
+    "Location Link",
+  ];
+  const dynamicHeaders = fields.map((f) => f.label);
+  const headers = [...baseHeaders, ...dynamicHeaders];
+
+  const row = [
+    "student@example.com",
+    "John Doe",
+    "Mr Doe",
+    "+911234567890",
+    "+911234567890",
+    "Main Campus",
+    "2026-04-25",
+    "10:30",
+    "https://maps.google.com/?q=campus",
+    ...dynamicHeaders.map(() => ""),
+  ];
+
+  const csv = `${headers.map(csvEscape).join(",")}\n${row.map(csvEscape).join(",")}\n`;
+
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -51,10 +104,18 @@ async function uploadFile(file: File, dryRun: boolean) {
 
 export function UploadPanel() {
   const [file, setFile] = React.useState<File | null>(null);
+  const [fields, setFields] = React.useState<PublicField[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const [result, setResult] = React.useState<UploadResponse | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [hasValidatedOnce, setHasValidatedOnce] = React.useState(false);
+
+  React.useEffect(() => {
+    fetch("/api/fields", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: FieldsResponse) => setFields(Array.isArray(data?.fields) ? data.fields : []))
+      .catch(() => setFields([]));
+  }, []);
 
   async function validate() {
     if (!file) return;
@@ -112,7 +173,7 @@ export function UploadPanel() {
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={downloadSampleCsv}
+                  onClick={() => downloadSampleCsv(fields)}
                 >
                   Download sample CSV
                 </Button>

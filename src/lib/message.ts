@@ -20,6 +20,8 @@ export type CounsellingMessageInput = {
   address?: string;
   baseUrl?: string;
   contactNumber?: string;
+  extraFields?: Record<string, unknown>;
+  sessionId?: string;
   template?: string;
 };
 
@@ -45,6 +47,8 @@ export function buildCounsellingEmailHtml(input: CounsellingMessageInput) {
     address: input.address,
     location: input.location,
     contactNumber: input.contactNumber,
+    extraFields: input.extraFields,
+    sessionId: input.sessionId,
   });
 }
 

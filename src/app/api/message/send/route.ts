@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import connectDB from "@/lib/db";
 import Message from "@/models/Message";
+import Campus from "@/models/Campus";
 import { requireAuth } from "@/middleware/auth";
 import { sendWhatsApp } from "@/lib/infinito";
 import { sendEmail } from "@/lib/mailer";
@@ -36,6 +37,11 @@ export async function POST(request: Request) {
   const time = normalizeString(body?.time);
   const address = normalizeString(body?.address);
   const location = normalizeString(body?.location);
+  // sessionId is generated server-side (per-campus sequential)
+  const extraFields =
+    body?.extraFields && typeof body.extraFields === "object"
+      ? body.extraFields
+      : {};
 
   if (!studentName) return badRequest("studentName is required");
   if (!email || !isEmail(email)) return badRequest("valid email is required");
@@ -53,6 +59,32 @@ export async function POST(request: Request) {
     time,
     location,
   });
+  await connectDB();
+
+  // Generate a persistent, per-campus sequential ID (5 digits), atomically
+  const campusSlug =
+    campus.replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 10) || "CAMPUS";
+  const updated = await Campus.findOneAndUpdate(
+    { slug: campusSlug.toLowerCase() },
+    {
+      $setOnInsert: {
+        name: campus,
+        slug: campusSlug.toLowerCase(),
+        enabled: true,
+        order: 0,
+      },
+      $inc: { nextSequence: 1 },
+    },
+    {
+      upsert: true,
+      setDefaultsOnInsert: true,
+      returnDocument: "after",
+    }
+  ).lean();
+  const nextAfterInc = Number((updated as any)?.nextSequence || 2);
+  const seq = Math.max(1, nextAfterInc - 1);
+  const sessionId = `LAK${campusSlug}${String(seq).padStart(5, "0")}`;
+
   const html = buildCounsellingEmailHtml({
     baseUrl: process.env.APP_URL,
     studentName,
@@ -62,9 +94,9 @@ export async function POST(request: Request) {
     address,
     location,
     contactNumber,
+    extraFields,
+    sessionId,
   });
-
-  await connectDB();
 
   const msg = await Message.create({
     studentName,
@@ -75,6 +107,8 @@ export async function POST(request: Request) {
     time,
     address,
     location,
+    sessionId,
+    extraFields,
     status: "pending",
     createdBy: auth.user._id,
   });
@@ -122,6 +156,7 @@ export async function POST(request: Request) {
     message: {
       id: msg._id.toString(),
       status: msg.status,
+      sessionId: msg.sessionId,
     },
     results: { whatsapp: whatsappResult, email: emailResult },
     errors,

@@ -6,17 +6,20 @@ export function IconButton({
   children,
   variant = "ghost",
   disabled,
+  size = "md",
 }: {
   title: string;
   onClick?: () => void;
   children: React.ReactNode;
   variant?: "ghost" | "danger";
   disabled?: boolean;
+  size?: "sm" | "md";
 }) {
   const cls =
     variant === "danger"
       ? "text-red-700 hover:bg-red-50"
       : "text-slate-700 hover:bg-white/70";
+  const sizeCls = size === "sm" ? "h-8 w-8 rounded-lg" : "h-9 w-9 rounded-xl";
 
   return (
     <button
@@ -25,7 +28,8 @@ export function IconButton({
       onClick={onClick}
       disabled={disabled}
       className={[
-        "inline-flex h-9 w-9 items-center justify-center rounded-xl transition-colors disabled:opacity-60",
+        "inline-flex items-center justify-center transition-colors disabled:opacity-60",
+        sizeCls,
         cls,
       ].join(" ")}
     >

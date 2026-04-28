@@ -12,6 +12,8 @@ const MessageSchema = new mongoose.Schema(
     time: { type: String, trim: true },
     address: { type: String, trim: true },
     location: { type: String, trim: true },
+    sessionId: { type: String, trim: true },
+    extraFields: { type: Object, default: {} },
     status: {
       type: String,
       enum: ["pending", "sent", "failed"],

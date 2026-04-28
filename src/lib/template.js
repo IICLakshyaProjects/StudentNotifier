@@ -50,6 +50,8 @@ export function escapeHtml(input) {
  * @param {string} [data.address] - Session address
  * @param {string} data.location - Session location (URL or text)
  * @param {string} [data.contactNumber] - Contact number shown in Important section
+ * @param {Record<string, any>} [data.extraFields] - Additional dynamic fields (key->value)
+ * @param {string} [data.sessionId] - Session ID shown in email
  * @returns {string} HTML email template
  */
 export function generateCounsellingSessionTemplate(data) {
@@ -61,6 +63,8 @@ export function generateCounsellingSessionTemplate(data) {
     address = "[Address]",
     location = "[Location]",
     contactNumber = "",
+    extraFields = {},
+    sessionId = "",
   } = data || {};
 
   const normalizedBaseUrl = String(baseUrl || "").trim().replace(/\/+$/, "");
@@ -136,11 +140,38 @@ export function generateCounsellingSessionTemplate(data) {
                               <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Campus</div>
                               <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(campus)}</div>
 
+                              ${
+                                String(sessionId || "").trim()
+                                  ? `<div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">ID</div>
+                                     <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">${escapeHtml(
+                                       sessionId
+                                     )}</div>`
+                                  : ``
+                              }
+
                               <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Date &amp; Time</div>
                               <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(dateTime)}</div>
 
                               <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Address</div>
                               <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(address)}</div>
+
+                              ${
+                                extraFields && typeof extraFields === "object"
+                                  ? Object.entries(extraFields)
+                                      .filter(([, v]) => String(v ?? "").trim().length > 0)
+                                      .slice(0, 20)
+                                      .map(
+                                        ([k, v]) => `
+                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">${escapeHtml(
+                                k
+                              )}</div>
+                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(
+                                v
+                              )}</div>`
+                                      )
+                                      .join("")
+                                  : ""
+                              }
 
                               <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Location</div>
                               <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">
@@ -152,16 +183,6 @@ export function generateCounsellingSessionTemplate(data) {
                                         locationHref
                                       )}" target="_blank" rel="noreferrer" style="color:#1d4ed8;text-decoration:underline;">Open location</a>`
                                     : `${escapeHtml(location)}`
-                                }
-                              </div>
-
-                              <div style="margin-top:16px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px;text-align:center;">
-                                ${
-                                  locationHref
-                                    ? `<a href="${escapeHtml(locationHref)}" target="_blank" rel="noreferrer" style="display:inline-block;text-decoration:none;">
-                                         <img src="${escapeHtml(cardImageUrl)}" alt="Admission Card" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;margin:0 auto;">
-                                       </a>`
-                                    : `<img src="${escapeHtml(cardImageUrl)}" alt="Admission Card" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;margin:0 auto;">`
                                 }
                               </div>
                             </td>
