@@ -4,8 +4,8 @@ import * as React from "react";
 
 import { Button } from "@/components/ui/Button";
 
-const SAMPLE_CSV = `email,Student Name,Parent Name,WhatsApp No,Campus,Date,Time,Location Link
-student@example.com,John Doe,Mr Doe,+911234567890,Main Campus,2026-04-25,10:30,https://maps.google.com/?q=campus
+const SAMPLE_CSV = `email,Student Name,Parent Name,WhatsApp No,Contact Number,Campus,Date,Time,Location Link
+student@example.com,John Doe,Mr Doe,+911234567890,+911234567890,Main Campus,2026-04-25,10:30,https://maps.google.com/?q=campus
 `;
 
 function downloadSampleCsv() {
