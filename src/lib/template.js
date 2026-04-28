@@ -49,6 +49,7 @@ export function escapeHtml(input) {
  * @param {string} data.dateTime - Session date and time
  * @param {string} [data.address] - Session address
  * @param {string} data.location - Session location (URL or text)
+ * @param {string} [data.contactNumber] - Contact number shown in Important section
  * @returns {string} HTML email template
  */
 export function generateCounsellingSessionTemplate(data) {
@@ -59,6 +60,7 @@ export function generateCounsellingSessionTemplate(data) {
     dateTime = "[Date and Time]",
     address = "[Address]",
     location = "[Location]",
+    contactNumber = "",
   } = data || {};
 
   const normalizedBaseUrl = String(baseUrl || "").trim().replace(/\/+$/, "");
@@ -169,6 +171,11 @@ export function generateCounsellingSessionTemplate(data) {
                     <div style="font-weight:700;color:#B45309;margin:0 0 8px 0;font-size:16px;">Important</div>
                     Please keep your admission card ready and confirm once received.<br>
                     If you have questions, please contact the campus team.
+                    ${
+                      String(contactNumber || "").trim()
+                        ? `<br><span style="font-weight:700;color:#0F172A;">Contact:</span> <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">${escapeHtml(contactNumber)}</span>`
+                        : ``
+                    }
                   </div>
                 </td>
               </tr>

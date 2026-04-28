@@ -19,6 +19,7 @@ export type CounsellingMessageInput = {
   location: string;
   address?: string;
   baseUrl?: string;
+  contactNumber?: string;
   template?: string;
 };
 
@@ -43,6 +44,7 @@ export function buildCounsellingEmailHtml(input: CounsellingMessageInput) {
     dateTime: `${input.date} · ${input.time}`,
     address: input.address,
     location: input.location,
+    contactNumber: input.contactNumber,
   });
 }
 

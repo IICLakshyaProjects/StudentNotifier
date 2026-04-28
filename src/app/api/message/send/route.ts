@@ -30,6 +30,7 @@ export async function POST(request: Request) {
   const studentName = normalizeString(body?.studentName);
   const email = normalizeEmail(body?.email);
   const whatsapp = normalizePhone(body?.whatsapp);
+  const contactNumber = normalizePhone(body?.contactNumber) || whatsapp;
   const campus = normalizeString(body?.campus);
   const date = normalizeString(body?.date);
   const time = normalizeString(body?.time);
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
     time,
     address,
     location,
+    contactNumber,
   });
 
   await connectDB();

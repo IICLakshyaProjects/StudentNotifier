@@ -97,6 +97,7 @@ async function sendOne({
     parentName?: string;
     email: string;
     whatsapp: string;
+    contactNumber?: string;
     campus: string;
     date: string;
     time: string;
@@ -109,6 +110,7 @@ async function sendOne({
   const parentName = normalizeString(record.parentName);
   const email = normalizeEmail(record.email);
   const whatsapp = normalizePhone(record.whatsapp);
+  const contactNumber = normalizePhone(record.contactNumber) || whatsapp;
   const campus = normalizeString(record.campus);
   const date = normalizeString(record.date);
   const time = normalizeString(record.time);
@@ -130,6 +132,7 @@ async function sendOne({
     time,
     address,
     location,
+    contactNumber,
   });
 
   const msg = await Message.create({
@@ -142,6 +145,7 @@ async function sendOne({
     time,
     address,
     location,
+    contactNumber,
     status: "pending",
     createdBy: authUserId,
   });
@@ -233,6 +237,7 @@ export async function POST(request: Request) {
     parentName?: string;
     email: string;
     whatsapp: string;
+    contactNumber?: string;
     campus: string;
     date: string;
     time: string;
@@ -246,6 +251,8 @@ export async function POST(request: Request) {
     const parentName = normalizeString(row["Parent Name"]);
     const email = normalizeEmail(row["email"]);
     const whatsapp = normalizePhone(row["WhatsApp No"]);
+    const contactNumber =
+      normalizePhone(row["Contact Number"]) || whatsapp;
     const campus = normalizeString(row["Campus"]);
     const date = normalizeString(row["Date"]);
     const time = normalizeString(row["Time"]);
@@ -270,6 +277,7 @@ export async function POST(request: Request) {
       parentName,
       email,
       whatsapp,
+      contactNumber,
       campus,
       date,
       time,
