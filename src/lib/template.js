@@ -43,20 +43,33 @@ export function escapeHtml(input) {
 /**
  * Generates HTML email template for counselling session confirmation
  * @param {Object} data - Template data
+ * @param {string} [data.baseUrl] - Base URL for absolute image links (e.g. APP_URL)
  * @param {string} data.studentName - Student's name
  * @param {string} data.campus - Campus name
  * @param {string} data.dateTime - Session date and time
- * @param {string} data.location - Session location
+ * @param {string} [data.address] - Session address
+ * @param {string} data.location - Session location (URL or text)
  * @returns {string} HTML email template
  */
 export function generateCounsellingSessionTemplate(data) {
   const {
+    baseUrl = process.env.APP_URL || "",
     studentName = "Student",
     campus = "[Campus]",
     dateTime = "[Date and Time]",
     address = "[Address]",
     location = "[Location]",
   } = data || {};
+
+  const normalizedBaseUrl = String(baseUrl || "").trim().replace(/\/+$/, "");
+  function abs(path) {
+    const p = String(path || "");
+    if (!p) return "";
+    if (/^https?:\/\//i.test(p)) return p;
+    if (!normalizedBaseUrl) return p;
+    if (!p.startsWith("/")) return `${normalizedBaseUrl}/${p}`;
+    return `${normalizedBaseUrl}${p}`;
+  }
   const locationHref = (() => {
     const value = String(location || "").trim();
     if (!value) return "";
@@ -65,6 +78,11 @@ export function generateCounsellingSessionTemplate(data) {
     return `https://${value}`;
   })();
 
+  const logoUrl = abs("/api/images/WHITE.png");
+  const bannerUrl = abs("/api/images/bg-banner1.png");
+  const cardImageUrl = abs("/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png");
+
+  // Email clients vary wildly. Avoid flex/grid/clamp/background-image; use tables + inline styles.
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -72,208 +90,98 @@ export function generateCounsellingSessionTemplate(data) {
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>Counselling Session Confirmed</title>
-      <style>
-        body {
-          margin: 0;
-          padding: 0;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          background-color: #f5f5f5;
-        }
-        .email-container {
-          max-width: 700px;
-          margin: 20px auto;
-          background: linear-gradient(180deg, 
-            rgba(0, 51, 102, 0.08) 0%, 
-            rgba(255, 255, 255, 1) 25%,
-            rgba(255, 255, 255, 1) 100%);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-          overflow: hidden;
-          border-radius: 12px;
-        }
-        .header {
-          background-image: url('/api/images/bg-banner1.png');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          padding: 25px 30px;
-          position: relative;
-          min-height: 100px;
-          display: flex;
-          align-items: flex-start;
-        }
-        .logo {
-          position: relative;
-          z-index: 1;
-          height: 70px;
-          width: auto;
-        }
-        .content {
-          padding: 35px 30px;
-          background-color: #ffffff;
-        }
-        .greeting {
-          font-size: 24px;
-          font-weight: 700;
-          color: #003366;
-          margin: 0 0 12px 0;
-          line-height: 1.4;
-        }
-        .confirmation-text {
-          font-size: 16px;
-          color: #333333;
-          line-height: 1.6;
-          margin-bottom: 28px;
-          margin-top: 8px;
-        }
-        .admission-card-wrapper {
-          margin: 30px 0;
-        }
-        .admission-card {
-          background: linear-gradient(135deg, #003366 0%, #0055cc 100%);
-          border-radius: 16px;
-          padding: 30px;
-          box-shadow: 0 6px 20px rgba(0, 51, 102, 0.2);
-          display: flex;
-          align-items: stretch;
-          gap: 22px;
-          flex-wrap: nowrap;
-          min-height: 280px;
-        }
-        .admission-card-image-container {
-          flex-shrink: 0;
-          width: 220px;
-          height: 220px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255, 255, 255, 0.04);
-          border-radius: 18px;
-          padding: 0;
-          overflow: hidden;
-        }
-        .admission-card-image {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-        }
-        .details-box {
-          background-color: #ffffff;
-          border-radius: 10px;
-          padding: 22px 20px;
-          flex: 1;
-          min-width: 0;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-        .detail-item {
-          display: flex;
-          flex-direction: column;
-          margin-bottom: 18px;
-          align-items: flex-start;
-        }
-        .detail-item:last-child {
-          margin-bottom: 0;
-        }
-        .detail-label {
-          font-weight: 700;
-          color: #003366;
-          font-size: 13px;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-          margin-bottom: 6px;
-        }
-        .detail-value {
-          color: #333333;
-          font-size: 15px;
-          line-height: 1.5;
-          word-wrap: break-word;
-        }
-        .instruction-box {
-          background-color: #fff9e6;
-          border: 2px solid #ffc107;
-          border-radius: 10px;
-          padding: 22px;
-          margin: 28px 0 0 0;
-          font-size: 15px;
-          color: #333333;
-          line-height: 1.7;
-        }
-        .instruction-box strong {
-          color: #f57f17;
-          display: block;
-          margin-bottom: 8px;
-          font-size: 16px;
-        }
-        .footer {
-          background-color: #f8f9fa;
-          padding: 22px 30px;
-          text-align: center;
-          font-size: 12px;
-          color: #999999;
-          border-top: 1px solid #e9ecef;
-        }
-      </style>
     </head>
-    <body>
-      <div class="email-container">
-        <!-- Header with Logo -->
-        <div class="header">
-          <img src="/api/images/WHITE.png" alt="Lakshya Logo" class="logo">
-        </div>
+    <body style="margin:0;padding:0;background:#f5f5f5;font-family:Segoe UI,Tahoma,Geneva,Verdana,sans-serif;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#f5f5f5;margin:0;padding:0;">
+        <tr>
+          <td align="center" style="padding:20px 12px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="700" style="width:700px;max-width:700px;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.12);">
+              <tr>
+                <td
+                  bgcolor="#0f766e"
+                  style="padding:28px 22px;background:#0f766e;background-image:linear-gradient(90deg,#0b7285 0%,#16a34a 55%,#facc15 120%);"
+                >
+                  <img
+                    src="cid:lakshya-logo"
+                    alt="Lakshya Logo"
+                    height="46"
+                    style="display:block;height:46px;width:auto;border:0;outline:none;text-decoration:none;"
+                  >
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:18px 22px 24px 22px;">
+                  <div style="font-size:24px;font-weight:700;color:#003366;line-height:1.35;margin:0 0 10px 0;">
+                    Hi ${escapeHtml(studentName)},
+                  </div>
+                  <div style="font-size:16px;color:#333333;line-height:1.6;margin:0 0 18px 0;">
+                    Counselling session confirmed, please find the session details below:
+                  </div>
 
-        <!-- Main Content -->
-        <div class="content">
-          <p class="greeting">Hi ${escapeHtml(studentName)},</p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#003366;border-radius:16px;">
+                    <tr>
+                      <td style="padding:18px;">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ffffff;border-radius:12px;">
+                          <tr>
+                            <td style="padding:18px 18px 8px 18px;">
+                              <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#64748B;">
+                                Session details
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding:0 18px 18px 18px;">
+                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Campus</div>
+                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(campus)}</div>
 
-          <p class="confirmation-text">
-            Counselling session confirmed, please find the session details below:
-          </p>
+                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Date &amp; Time</div>
+                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(dateTime)}</div>
 
-          <!-- Admission Card Section -->
-          <div class="admission-card-wrapper">
-            <div class="admission-card">
-              <!-- Session Details Box -->
-              <div class="details-box">
-                <div class="detail-item">
-                  <div class="detail-label">Campus</div>
-                  <div class="detail-value">${escapeHtml(campus)}</div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Date & Time</div>
-                  <div class="detail-value">${escapeHtml(dateTime)}</div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Address</div>
-                  <div class="detail-value">${escapeHtml(address)}</div>
-                </div>
-                <div class="detail-item">
-                  <div class="detail-label">Location</div>
-                  <div class="detail-value">${escapeHtml(location)}</div>
-                </div>
-              </div>
-              
-              <!-- Admission Card Image on Right -->
-              ${
-                locationHref
-                  ? `<a class="admission-card-image-container" href="${escapeHtml(locationHref)}" target="_blank" rel="noreferrer" aria-label="Open location from image"><img src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png" alt="Admission Card" class="admission-card-image"></a>`
-                  : `<div class="admission-card-image-container"><img src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png" alt="Admission Card" class="admission-card-image"></div>`
-              }
-            </div>
-          </div>
+                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Address</div>
+                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(address)}</div>
 
-          <!-- Important Instructions -->
-          <div class="instruction-box">
-            <strong>📋 Important:</strong>
-            Please keep your admission card ready and confirm once received.<br>
-            If you have questions, please contact the campus team.
-          </div>
-        </div>
+                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Location</div>
+                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">
+                                ${
+                                  locationHref
+                                    ? `<a href="${escapeHtml(locationHref)}" target="_blank" rel="noreferrer" style="color:#1d4ed8;text-decoration:underline;">${escapeHtml(location)}</a>`
+                                    : `${escapeHtml(location)}`
+                                }
+                              </div>
 
-        <!-- Footer -->
-        <div class="footer">
-          <p>© 2026 Lakshya. All rights reserved.</p>
-          <p>This is an automated message, please do not reply to this email.</p>
-        </div>
-      </div>
+                              <div style="margin-top:16px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:10px;text-align:center;">
+                                ${
+                                  locationHref
+                                    ? `<a href="${escapeHtml(locationHref)}" target="_blank" rel="noreferrer" style="display:inline-block;text-decoration:none;">
+                                         <img src="${escapeHtml(cardImageUrl)}" alt="Admission Card" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;margin:0 auto;">
+                                       </a>`
+                                    : `<img src="${escapeHtml(cardImageUrl)}" alt="Admission Card" width="520" style="display:block;width:100%;max-width:520px;height:auto;border:0;outline:none;text-decoration:none;margin:0 auto;">`
+                                }
+                              </div>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+
+                  <div style="margin-top:18px;background:#FFFBEB;border:2px solid #FBBF24;border-radius:12px;padding:16px;font-size:15px;color:#333333;line-height:1.7;">
+                    <div style="font-weight:700;color:#B45309;margin:0 0 8px 0;font-size:16px;">Important</div>
+                    Please keep your admission card ready and confirm once received.<br>
+                    If you have questions, please contact the campus team.
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:16px 22px;background:#f8f9fa;border-top:1px solid #e9ecef;text-align:center;font-size:12px;color:#999999;">
+                  © 2026 Lakshya. All rights reserved.<br>
+                  This is an automated message, please do not reply to this email.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </body>
     </html>
   `;

@@ -30,7 +30,7 @@ function getTransporter() {
 /**
  * Sends an email via SMTP.
  *
- * @param {{to:string, subject:string, text?:string, html?:string, from?:string, replyTo?:string}} input
+ * @param {{to:string, subject:string, text?:string, html?:string, from?:string, replyTo?:string, attachments?:any[]}} input
  */
 export async function sendEmail(input) {
   const to = input?.to?.toString().trim();
@@ -56,6 +56,7 @@ export async function sendEmail(input) {
     text: input?.text,
     html: input?.html,
     replyTo: input?.replyTo,
+    attachments: input?.attachments,
   });
 
   return {

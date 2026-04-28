@@ -7,6 +7,7 @@ import { sendWhatsApp } from "@/lib/infinito";
 import { sendEmail } from "@/lib/mailer";
 import { buildCounsellingEmailHtml, buildCounsellingMessage } from "@/lib/message";
 import { isInfinitoSynqEnabled } from "@/lib/feature-flags";
+import path from "node:path";
 import {
   isEmail,
   normalizeEmail,
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
   const campus = normalizeString(body?.campus);
   const date = normalizeString(body?.date);
   const time = normalizeString(body?.time);
+  const address = normalizeString(body?.address);
   const location = normalizeString(body?.location);
 
   if (!studentName) return badRequest("studentName is required");
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
   if (!campus) return badRequest("campus is required");
   if (!date) return badRequest("date is required");
   if (!time) return badRequest("time is required");
+  if (!address) return badRequest("address is required");
   if (!location) return badRequest("location is required");
 
   const text = buildCounsellingMessage({
@@ -50,10 +53,12 @@ export async function POST(request: Request) {
     location,
   });
   const html = buildCounsellingEmailHtml({
+    baseUrl: process.env.APP_URL,
     studentName,
     campus,
     date,
     time,
+    address,
     location,
   });
 
@@ -66,6 +71,7 @@ export async function POST(request: Request) {
     campus,
     date,
     time,
+    address,
     location,
     status: "pending",
     createdBy: auth.user._id,
@@ -93,6 +99,13 @@ export async function POST(request: Request) {
       subject: "Counselling session confirmed",
       text,
       html,
+      attachments: [
+        {
+          filename: "WHITE.png",
+          path: path.join(process.cwd(), "public", "WHITE.png"),
+          cid: "lakshya-logo",
+        },
+      ],
     });
   } catch (e: any) {
     status = "failed";

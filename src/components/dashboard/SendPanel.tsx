@@ -15,12 +15,46 @@ type SendResponse = {
   errors: string[];
 };
 
+function campusSlug(campus: string) {
+  const cleaned = campus.replace(/[^a-z0-9]+/gi, "");
+  return (cleaned || "CAMPUS").toUpperCase().slice(0, 10);
+}
+
+function hashTo6Digits(input: string) {
+  let h = 0;
+  for (let i = 0; i < input.length; i++) {
+    h = (h * 31 + input.charCodeAt(i)) >>> 0;
+  }
+  return String(h % 1_000_000).padStart(6, "0");
+}
+
+function toLocationHref(location: string) {
+  const value = location.trim();
+  if (!value) return "";
+  if (value === "Location" || value === "[Location]" || value.startsWith("[")) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return `https://${value}`;
+}
+
+function formatTime12h(hhmm: string) {
+  const m = /^(\d{2}):(\d{2})$/.exec(hhmm.trim());
+  if (!m) return "";
+  const hh = Number(m[1]);
+  const mm = Number(m[2]);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return "";
+  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return "";
+  const suffix = hh >= 12 ? "PM" : "AM";
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h12}:${String(mm).padStart(2, "0")} ${suffix}`;
+}
+
 export function SendPanel() {
   const [isOpen, setIsOpen] = React.useState(true);
   const [form, setForm] = React.useState({
     studentName: "",
     email: "",
     whatsapp: "",
+    contactNumber: "",
     campus: "",
     date: "",
     time: "",
@@ -31,7 +65,13 @@ export function SendPanel() {
   const [isExporting, setIsExporting] = React.useState(false);
   const [result, setResult] = React.useState<SendResponse | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [toast, setToast] = React.useState<string | null>(null);
   const previewRef = React.useRef<HTMLDivElement | null>(null);
+
+  function showToast(message: string) {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2200);
+  }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,16 +97,27 @@ export function SendPanel() {
 
   const previewStudentName = form.studentName || "Student name";
   const previewCampus = form.campus || "Campus";
-  const previewDateTime = form.date || form.time ? `${form.date || "Date"} · ${form.time || "Time"}` : "Date · Time";
+  const previewTime = form.time ? formatTime12h(form.time) : "";
+  const previewDateTime =
+    form.date || form.time
+      ? `${form.date || "Date"} · ${previewTime || form.time || "Time"}`
+      : "Date · Time";
   const previewAddress = form.address || "Address";
   const previewLocation = form.location || "Location";
+  const previewContactNumber = form.contactNumber || form.whatsapp || "";
+  const previewSessionId = `LAK${campusSlug(previewCampus)}${hashTo6Digits(
+    `${previewStudentName}|${previewCampus}|${previewDateTime}|${previewAddress}|${previewLocation}`
+  )}`;
+  const previewLocationHref = toLocationHref(previewLocation);
   const previewUrl = `/dashboard/preview?studentName=${encodeURIComponent(
     form.studentName || ""
   )}&campus=${encodeURIComponent(form.campus || "")}&date=${encodeURIComponent(
     form.date || ""
   )}&time=${encodeURIComponent(form.time || "")}&address=${encodeURIComponent(
     form.address || ""
-  )}&location=${encodeURIComponent(form.location || "")}`;
+  )}&location=${encodeURIComponent(form.location || "")}&contactNumber=${encodeURIComponent(
+    form.contactNumber || ""
+  )}`;
 
   async function downloadPreviewImage() {
     if (!previewRef.current) return;
@@ -105,8 +156,50 @@ export function SendPanel() {
     }
   }
 
+  async function copyPreviewImage() {
+    if (!previewRef.current) return;
+    setIsExporting(true);
+    try {
+      const canvas = await html2canvas(previewRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+        useCORS: true,
+      });
+      const blob: Blob | null = await new Promise((resolve) =>
+        canvas.toBlob((b) => resolve(b), "image/png")
+      );
+      if (!blob) throw new Error("Unable to create image");
+
+      const ClipboardItemCtor = (globalThis as any).ClipboardItem;
+      if (!ClipboardItemCtor || !navigator.clipboard?.write) {
+        throw new Error("clipboard not supported");
+      }
+      const parts: Record<string, Blob> = { "image/png": blob };
+      if (previewLocationHref) {
+        parts["text/plain"] = new Blob([previewLocationHref], { type: "text/plain" });
+      }
+      const item = new ClipboardItemCtor(parts);
+      await navigator.clipboard.write([item]);
+      showToast(previewLocationHref ? "Image + location copied. Paste it where you need." : "Image copied. Paste it where you need.");
+    } catch {
+      showToast("Copy not supported here. Use Download PNG.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
+  async function copyLocationLink() {
+    if (!previewLocationHref) return;
+    try {
+      await navigator.clipboard.writeText(previewLocationHref);
+      showToast("Link copied.");
+    } catch {
+      showToast("Could not copy link.");
+    }
+  }
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
       <section className="rounded-2xl border border-slate-200/70 bg-white/70 shadow-sm shadow-slate-900/5 backdrop-blur">
         <div className="flex flex-col gap-3 border-b border-slate-200/70 p-4 md:flex-row md:items-start md:justify-between">
           <div>
@@ -151,6 +244,14 @@ export function SendPanel() {
                   setForm({ ...form, whatsapp: e.target.value })
                 }
                 hint="Include country code if needed"
+              />
+              <Input
+                label="Contact number"
+                value={form.contactNumber}
+                onChange={(e) =>
+                  setForm({ ...form, contactNumber: e.target.value })
+                }
+                hint="Shown in the Important section"
               />
               <Input
                 label="Campus"
@@ -202,6 +303,7 @@ export function SendPanel() {
                       studentName: "",
                       email: "",
                       whatsapp: "",
+                      contactNumber: "",
                       campus: "",
                       date: "",
                       time: "",
@@ -285,6 +387,14 @@ export function SendPanel() {
                   <Button
                     type="button"
                     variant="secondary"
+                    onClick={copyPreviewImage}
+                    disabled={isExporting}
+                  >
+                    Copy image
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
                     onClick={downloadPreviewPdf}
                     disabled={isExporting}
                   >
@@ -315,7 +425,38 @@ export function SendPanel() {
                   dateTime={previewDateTime}
                   address={previewAddress}
                   location={previewLocation}
+                  sessionId={previewSessionId}
+                  contactNumber={previewContactNumber}
                 />
+
+                <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/70 p-4">
+                  <div className="text-sm font-semibold text-slate-900">Location</div>
+                  <div className="mt-1 text-sm text-slate-600 break-words">
+                    {previewLocation}
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {previewLocationHref ? (
+                      <>
+                        <a
+                          href={previewLocationHref}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-b from-indigo-600 to-indigo-700 px-4 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 hover:from-indigo-500 hover:to-indigo-700"
+                        >
+                          Open location
+                        </a>
+                        <Button type="button" variant="secondary" onClick={copyLocationLink}>
+                          Copy link
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="text-xs text-slate-500">
+                        Add a valid link to enable the buttons.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="mt-4 flex justify-end">
                   <Button type="button" isLoading={isLoading} onClick={sendMessage}>
                     Send
@@ -326,6 +467,12 @@ export function SendPanel() {
           </div>
         </div>
       </section>
+
+      {toast ? (
+        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-slate-900 px-4 py-2 text-sm text-white shadow-lg">
+          {toast}
+        </div>
+      ) : null}
     </div>
   );
 }

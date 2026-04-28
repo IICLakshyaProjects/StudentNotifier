@@ -11,6 +11,7 @@ import { buildCounsellingEmailHtml, buildCounsellingMessage } from "@/lib/messag
 import { sendWhatsApp } from "@/lib/infinito";
 import { sendEmail } from "@/lib/mailer";
 import { isInfinitoSynqEnabled } from "@/lib/feature-flags";
+import path from "node:path";
 import {
   isEmail,
   normalizeEmail,
@@ -99,6 +100,7 @@ async function sendOne({
     campus: string;
     date: string;
     time: string;
+    address?: string;
     location: string;
   };
   authUserId: any;
@@ -110,6 +112,7 @@ async function sendOne({
   const campus = normalizeString(record.campus);
   const date = normalizeString(record.date);
   const time = normalizeString(record.time);
+  const address = normalizeString(record.address);
   const location = normalizeString(record.location);
 
   const text = buildCounsellingMessage({
@@ -120,10 +123,12 @@ async function sendOne({
     location,
   });
   const html = buildCounsellingEmailHtml({
+    baseUrl: process.env.APP_URL,
     studentName,
     campus,
     date,
     time,
+    address,
     location,
   });
 
@@ -135,6 +140,7 @@ async function sendOne({
     campus,
     date,
     time,
+    address,
     location,
     status: "pending",
     createdBy: authUserId,
@@ -158,6 +164,13 @@ async function sendOne({
       subject: "Counselling session confirmed",
       text,
       html,
+      attachments: [
+        {
+          filename: "WHITE.png",
+          path: path.join(process.cwd(), "public", "WHITE.png"),
+          cid: "lakshya-logo",
+        },
+      ],
     });
   } catch (e: any) {
     status = "failed";
