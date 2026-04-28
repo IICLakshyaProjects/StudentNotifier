@@ -7,6 +7,7 @@ import csvParser from "csv-parser";
 import connectDB from "@/lib/db";
 import Message from "@/models/Message";
 import Field from "@/models/Field";
+import Campus from "@/models/Campus";
 import { requireAuth } from "@/middleware/auth";
 import { buildCounsellingEmailHtml, buildCounsellingMessage } from "@/lib/message";
 import { sendWhatsApp } from "@/lib/infinito";
@@ -121,6 +122,29 @@ async function sendOne({
   const location = normalizeString(record.location);
   const extraFields = record.extraFields && typeof record.extraFields === "object" ? record.extraFields : {};
 
+  const campusSlug =
+    campus.replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 10) || "CAMPUS";
+  const campusUpdated = await Campus.findOneAndUpdate(
+    { slug: campusSlug.toLowerCase() },
+    {
+      $setOnInsert: {
+        name: campus,
+        slug: campusSlug.toLowerCase(),
+        enabled: true,
+        order: 0,
+      },
+      $inc: { nextSequence: 1 },
+    },
+    {
+      upsert: true,
+      setDefaultsOnInsert: true,
+      returnDocument: "after",
+    }
+  ).lean();
+  const nextAfterInc = Number((campusUpdated as any)?.nextSequence || 2);
+  const seq = Math.max(1, nextAfterInc - 1);
+  const sessionId = `LAK${campusSlug}${String(seq).padStart(5, "0")}`;
+
   const text = buildCounsellingMessage({
     studentName,
     campus,
@@ -138,6 +162,7 @@ async function sendOne({
     location,
     contactNumber,
     extraFields,
+    sessionId,
   });
 
   const msg = await Message.create({
@@ -151,6 +176,7 @@ async function sendOne({
     address,
     location,
     contactNumber,
+    sessionId,
     extraFields,
     status: "pending",
     createdBy: authUserId,

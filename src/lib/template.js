@@ -51,6 +51,7 @@ export function escapeHtml(input) {
  * @param {string} data.location - Session location (URL or text)
  * @param {string} [data.contactNumber] - Contact number shown in Important section
  * @param {Record<string, any>} [data.extraFields] - Additional dynamic fields (key->value)
+ * @param {string} [data.sessionId] - Session ID shown in email
  * @returns {string} HTML email template
  */
 export function generateCounsellingSessionTemplate(data) {
@@ -63,6 +64,7 @@ export function generateCounsellingSessionTemplate(data) {
     location = "[Location]",
     contactNumber = "",
     extraFields = {},
+    sessionId = "",
   } = data || {};
 
   const normalizedBaseUrl = String(baseUrl || "").trim().replace(/\/+$/, "");
@@ -137,6 +139,15 @@ export function generateCounsellingSessionTemplate(data) {
                             <td style="padding:0 18px 18px 18px;">
                               <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Campus</div>
                               <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(campus)}</div>
+
+                              ${
+                                String(sessionId || "").trim()
+                                  ? `<div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">ID</div>
+                                     <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">${escapeHtml(
+                                       sessionId
+                                     )}</div>`
+                                  : ``
+                              }
 
                               <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Date &amp; Time</div>
                               <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(dateTime)}</div>

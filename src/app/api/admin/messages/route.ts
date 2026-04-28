@@ -52,6 +52,7 @@ export async function GET(request: Request) {
     total,
     items: msgs.map((m: any) => ({
       id: m._id.toString(),
+      sessionId: m.sessionId,
       studentName: m.studentName,
       parentName: m.parentName,
       email: m.email,

@@ -157,7 +157,7 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
               Please keep your admission card ready and confirm once received. If you have questions, please contact the campus team.
             </div>
             <div style={{ marginTop: 10 }}>
-              <span style={{ fontWeight: 700, color: "#0F172A" }}>Contact:</span>{" "}
+              <span style={{ fontWeight: 700, color: "#0F172A" }}>Campus Contact No:</span>{" "}
               <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" }}>
                 {contactNumber || "—"}
               </span>

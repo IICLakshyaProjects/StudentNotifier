@@ -11,7 +11,7 @@ import { apiFetch } from "@/lib/auth-client";
 
 type SendResponse = {
   ok: boolean;
-  message: { id: string; status: "sent" | "failed" };
+  message: { id: string; status: "sent" | "failed"; sessionId?: string };
   errors: string[];
 };
 
@@ -36,6 +36,9 @@ type PublicField = {
 };
 
 type FieldsResponse = { ok: true; fields: PublicField[] };
+
+type CampusDto = { _id: string; name: string; slug: string; nextSequence?: number };
+type CampusesResponse = { ok: true; campuses: CampusDto[] };
 
 function campusSlug(campus: string) {
   const cleaned = campus.replace(/[^a-z0-9]+/gi, "");
@@ -73,6 +76,8 @@ function formatTime12h(hhmm: string) {
 export function SendPanel() {
   const [isOpen, setIsOpen] = React.useState(true);
   const [fields, setFields] = React.useState<PublicField[]>([]);
+  const [campuses, setCampuses] = React.useState<CampusDto[]>([]);
+  const [sentSessionId, setSentSessionId] = React.useState<string | null>(null);
   const [form, setForm] = React.useState({
     studentName: "",
     email: "",
@@ -111,7 +116,10 @@ export function SendPanel() {
         json: form,
       });
       setResult(res);
-      if (res.ok) setIsOpen(false);
+      if (res.ok) {
+        setSentSessionId(res.message.sessionId || null);
+        setIsOpen(false);
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Send failed");
     } finally {
@@ -126,6 +134,15 @@ export function SendPanel() {
       .catch(() => setFields([]));
   }, []);
 
+  React.useEffect(() => {
+    fetch("/api/campuses", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: CampusesResponse) =>
+        setCampuses(Array.isArray(data?.campuses) ? data.campuses : [])
+      )
+      .catch(() => setCampuses([]));
+  }, []);
+
   const previewStudentName = form.studentName || "Student name";
   const previewCampus = form.campus || "Campus";
   const previewTime = form.time ? formatTime12h(form.time) : "";
@@ -135,16 +152,19 @@ export function SendPanel() {
       : "Date · Time";
   const previewAddress = form.address || "Address";
   const previewLocation = form.location || "Location";
-  const previewContactNumber = form.contactNumber || form.whatsapp || "";
+  const previewContactNumber = form.contactNumber || "";
   const previewExtraFields = fields
     .filter((f) => f.enabled)
     .map((f) => ({
       label: f.label,
       value: String(form.extraFields?.[f.key] || ""),
     }));
-  const previewSessionId = `LAK${campusSlug(previewCampus)}${hashTo6Digits(
-    `${previewStudentName}|${previewCampus}|${previewDateTime}|${previewAddress}|${previewLocation}`
-  )}`;
+  const campusInfo = campuses.find((c) => c.name === form.campus);
+  const nextSeq = Number.isFinite(Number(campusInfo?.nextSequence))
+    ? Number(campusInfo?.nextSequence)
+    : 1;
+  const predictedSessionId = `LAK${campusSlug(previewCampus)}${String(nextSeq).padStart(5, "0")}`;
+  const previewSessionId = sentSessionId || predictedSessionId;
   const previewLocationHref = toLocationHref(previewLocation);
   const previewUrl = `/dashboard/preview?studentName=${encodeURIComponent(
     form.studentName || ""
@@ -213,7 +233,13 @@ export function SendPanel() {
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (previewLocationHref) {
-        const text = `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`;
+        const lines = [
+          `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`,
+        ];
+        if (form.contactNumber?.trim()) {
+          lines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
+        }
+        const text = lines.join("\n");
         parts["text/plain"] = new Blob([text], { type: "text/plain" });
       }
       const item = new ClipboardItemCtor(parts);
@@ -229,7 +255,13 @@ export function SendPanel() {
   async function copyLocationLink() {
     if (!previewLocationHref) return;
     try {
-      const text = `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`;
+      const lines = [
+        `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`,
+      ];
+      if (form.contactNumber?.trim()) {
+        lines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
+      }
+      const text = lines.join("\n");
       await navigator.clipboard.writeText(text);
       showToast("Text + link copied.");
     } catch {
@@ -285,18 +317,33 @@ export function SendPanel() {
                 hint="Include country code if needed"
               />
               <Input
-                label="Contact number"
+                label="Campus Contact No"
                 value={form.contactNumber}
                 onChange={(e) =>
                   setForm({ ...form, contactNumber: e.target.value })
                 }
-                hint="Shown in the Important section"
+                hint="Used in the Important section"
               />
-              <Input
-                label="Campus"
-                value={form.campus}
-                onChange={(e) => setForm({ ...form, campus: e.target.value })}
-              />
+              <label className="block">
+                <div className="mb-1.5 text-sm font-medium text-slate-900">
+                  Campus
+                </div>
+                <select
+                  className="h-11 w-full rounded-xl border border-slate-200/80 bg-white/80 px-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 backdrop-blur focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
+                  value={form.campus}
+                  onChange={(e) => setForm({ ...form, campus: e.target.value })}
+                >
+                  <option value="">Select campus…</option>
+                  {campuses.map((c) => (
+                    <option key={c._id} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-1 text-xs text-slate-500">
+                  Managed in Admin → Campuses.
+                </div>
+              </label>
               <Input
                 label="Date"
                 type="date"
@@ -364,6 +411,7 @@ export function SendPanel() {
                   type="button"
                   variant="secondary"
                   onClick={() =>
+                    (setSentSessionId(null),
                     setForm({
                       studentName: "",
                       email: "",
@@ -375,7 +423,7 @@ export function SendPanel() {
                       address: "",
                       location: "",
                       extraFields: {},
-                    })
+                    }))
                   }
                 >
                   Clear
@@ -453,14 +501,6 @@ export function SendPanel() {
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={copyPreviewImage}
-                    disabled={isExporting}
-                  >
-                    Copy image
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="secondary"
                     onClick={downloadPreviewPdf}
                     disabled={isExporting}
                   >
@@ -522,6 +562,9 @@ export function SendPanel() {
                         >
                           Open location
                         </a>
+                        <Button type="button" variant="secondary" onClick={copyPreviewImage} disabled={isExporting}>
+                          Copy image
+                        </Button>
                         <Button type="button" variant="secondary" onClick={copyLocationLink}>
                           Copy link
                         </Button>

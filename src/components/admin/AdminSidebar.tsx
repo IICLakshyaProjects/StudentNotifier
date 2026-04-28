@@ -51,6 +51,11 @@ export function AdminSidebar() {
             subtitle="Manage learner accounts"
           />
           <Item
+            href="/admin/dashboard/campuses"
+            title="Campuses"
+            subtitle="Manage campus list"
+          />
+          <Item
             href="/admin/dashboard/fields"
             title="Fields"
             subtitle="Configure form fields"
