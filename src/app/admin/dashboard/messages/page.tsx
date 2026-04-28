@@ -111,6 +111,23 @@ export default function AdminMessagesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function clearAll() {
+    const ok = confirm(
+      "This will permanently delete ALL messages.\n\nAre you sure you want to continue?"
+    );
+    if (!ok) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      await apiFetch("/api/admin/messages", { method: "DELETE" });
+      await load(1);
+    } catch (e: any) {
+      setError(e?.message || "Failed to clear messages");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -122,8 +139,19 @@ export default function AdminMessagesPage() {
             Search and review message activity.
           </div>
         </div>
-        <div className="text-xs text-slate-500">
-          {isLoading ? "Loading…" : `Showing ${items.length} results`}
+        <div className="flex flex-col items-start gap-2 md:items-end">
+          <div className="text-xs text-slate-500">
+            {isLoading ? "Loading…" : `Showing ${items.length} results`}
+          </div>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            onClick={clearAll}
+            disabled={isLoading || total === 0}
+          >
+            Clear all
+          </Button>
         </div>
       </div>
 

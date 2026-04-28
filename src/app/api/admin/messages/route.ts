@@ -65,3 +65,15 @@ export async function GET(request: Request) {
   });
 }
 
+export async function DELETE(request: Request) {
+  const auth = await requireRole(request, ["admin"]);
+  if (!auth.ok) return auth.response;
+
+  await connectDB();
+  const res = await Message.deleteMany({});
+  return NextResponse.json({
+    ok: true,
+    deletedCount: res.deletedCount ?? 0,
+  });
+}
+

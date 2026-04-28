@@ -8,10 +8,14 @@ type TemplatePreviewProps = {
   location: string;
   sessionId: string;
   contactNumber: string;
+  extraFields?: Array<{ label: string; value: string }>;
 };
 
 export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewProps>(
-  function TemplatePreview({ studentName, campus, dateTime, address, location, sessionId, contactNumber }, ref) {
+  function TemplatePreview(
+    { studentName, campus, dateTime, address, location, sessionId, contactNumber, extraFields = [] },
+    ref
+  ) {
     return (
       <div
         ref={ref}
@@ -92,6 +96,16 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
                   <div style={{ fontWeight: 700, color: "#0F172A" }}>Address</div>
                   <div>{address}</div>
                 </div>
+                {extraFields
+                  .filter((f) => String(f?.value || "").trim().length > 0)
+                  .map((f) => (
+                    <div key={f.label}>
+                      <div style={{ fontWeight: 700, color: "#0F172A" }}>
+                        {f.label}
+                      </div>
+                      <div>{f.value}</div>
+                    </div>
+                  ))}
               </div>
 
               <div

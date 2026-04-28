@@ -50,6 +50,7 @@ export function escapeHtml(input) {
  * @param {string} [data.address] - Session address
  * @param {string} data.location - Session location (URL or text)
  * @param {string} [data.contactNumber] - Contact number shown in Important section
+ * @param {Record<string, any>} [data.extraFields] - Additional dynamic fields (key->value)
  * @returns {string} HTML email template
  */
 export function generateCounsellingSessionTemplate(data) {
@@ -61,6 +62,7 @@ export function generateCounsellingSessionTemplate(data) {
     address = "[Address]",
     location = "[Location]",
     contactNumber = "",
+    extraFields = {},
   } = data || {};
 
   const normalizedBaseUrl = String(baseUrl || "").trim().replace(/\/+$/, "");
@@ -141,6 +143,24 @@ export function generateCounsellingSessionTemplate(data) {
 
                               <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Address</div>
                               <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(address)}</div>
+
+                              ${
+                                extraFields && typeof extraFields === "object"
+                                  ? Object.entries(extraFields)
+                                      .filter(([, v]) => String(v ?? "").trim().length > 0)
+                                      .slice(0, 20)
+                                      .map(
+                                        ([k, v]) => `
+                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">${escapeHtml(
+                                k
+                              )}</div>
+                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(
+                                v
+                              )}</div>`
+                                      )
+                                      .join("")
+                                  : ""
+                              }
 
                               <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Location</div>
                               <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">

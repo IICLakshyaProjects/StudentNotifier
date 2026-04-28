@@ -51,6 +51,11 @@ export function AdminSidebar() {
             subtitle="Manage learner accounts"
           />
           <Item
+            href="/admin/dashboard/fields"
+            title="Fields"
+            subtitle="Configure form fields"
+          />
+          <Item
             href="/admin/dashboard/messages"
             title="Messages"
             subtitle="Review message activity"

@@ -36,6 +36,10 @@ export async function POST(request: Request) {
   const time = normalizeString(body?.time);
   const address = normalizeString(body?.address);
   const location = normalizeString(body?.location);
+  const extraFields =
+    body?.extraFields && typeof body.extraFields === "object"
+      ? body.extraFields
+      : {};
 
   if (!studentName) return badRequest("studentName is required");
   if (!email || !isEmail(email)) return badRequest("valid email is required");
@@ -62,6 +66,7 @@ export async function POST(request: Request) {
     address,
     location,
     contactNumber,
+    extraFields,
   });
 
   await connectDB();
@@ -75,6 +80,7 @@ export async function POST(request: Request) {
     time,
     address,
     location,
+    extraFields,
     status: "pending",
     createdBy: auth.user._id,
   });

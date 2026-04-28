@@ -15,6 +15,28 @@ type SendResponse = {
   errors: string[];
 };
 
+type FieldType =
+  | "text"
+  | "email"
+  | "tel"
+  | "url"
+  | "password"
+  | "number"
+  | "date"
+  | "time";
+
+type PublicField = {
+  _id: string;
+  label: string;
+  key: string;
+  type: FieldType;
+  required: boolean;
+  enabled: boolean;
+  order: number;
+};
+
+type FieldsResponse = { ok: true; fields: PublicField[] };
+
 function campusSlug(campus: string) {
   const cleaned = campus.replace(/[^a-z0-9]+/gi, "");
   return (cleaned || "CAMPUS").toUpperCase().slice(0, 10);
@@ -50,6 +72,7 @@ function formatTime12h(hhmm: string) {
 
 export function SendPanel() {
   const [isOpen, setIsOpen] = React.useState(true);
+  const [fields, setFields] = React.useState<PublicField[]>([]);
   const [form, setForm] = React.useState({
     studentName: "",
     email: "",
@@ -60,6 +83,7 @@ export function SendPanel() {
     time: "",
     address: "",
     location: "",
+    extraFields: {} as Record<string, string>,
   });
   const [isLoading, setIsLoading] = React.useState(false);
   const [isExporting, setIsExporting] = React.useState(false);
@@ -95,6 +119,13 @@ export function SendPanel() {
     }
   }
 
+  React.useEffect(() => {
+    fetch("/api/fields", { credentials: "include" })
+      .then((r) => r.json())
+      .then((data: FieldsResponse) => setFields(Array.isArray(data?.fields) ? data.fields : []))
+      .catch(() => setFields([]));
+  }, []);
+
   const previewStudentName = form.studentName || "Student name";
   const previewCampus = form.campus || "Campus";
   const previewTime = form.time ? formatTime12h(form.time) : "";
@@ -105,6 +136,12 @@ export function SendPanel() {
   const previewAddress = form.address || "Address";
   const previewLocation = form.location || "Location";
   const previewContactNumber = form.contactNumber || form.whatsapp || "";
+  const previewExtraFields = fields
+    .filter((f) => f.enabled)
+    .map((f) => ({
+      label: f.label,
+      value: String(form.extraFields?.[f.key] || ""),
+    }));
   const previewSessionId = `LAK${campusSlug(previewCampus)}${hashTo6Digits(
     `${previewStudentName}|${previewCampus}|${previewDateTime}|${previewAddress}|${previewLocation}`
   )}`;
@@ -293,6 +330,32 @@ export function SendPanel() {
                 />
               </div>
 
+              {fields.length ? (
+                <div className="sm:col-span-2">
+                  <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                    {fields.map((f) => (
+                      <Input
+                        key={f._id}
+                        label={f.label}
+                        type={f.type}
+                        required={f.required}
+                        value={form.extraFields?.[f.key] || ""}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            extraFields: {
+                              ...(prev.extraFields || {}),
+                              [f.key]: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder={f.label}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="sm:col-span-2 mt-2 flex flex-wrap items-center gap-3">
                 <Button type="button">
                   Update preview
@@ -311,6 +374,7 @@ export function SendPanel() {
                       time: "",
                       address: "",
                       location: "",
+                      extraFields: {},
                     })
                   }
                 >
@@ -429,6 +493,7 @@ export function SendPanel() {
                   location={previewLocation}
                   sessionId={previewSessionId}
                   contactNumber={previewContactNumber}
+                  extraFields={previewExtraFields}
                 />
 
                 <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/70 p-4">
