@@ -26,6 +26,32 @@ function toLocationHref(location: string) {
   return `https://${value}`;
 }
 
+function buildLocationHtml(locationHref: string, campus: string, contactNumber?: string) {
+  const lines = [`<div>For campus location: <a href="${locationHref}">${locationHref}</a></div>`];
+  if (contactNumber?.trim()) {
+    lines.push(`<div>Please contact campus at: ${contactNumber.trim()}</div>`);
+  }
+  return lines.join("");
+}
+
+const PROXY_SESSION_IMAGE_URL = "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
+
+async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
+  if (!previewRef.current) return null;
+  return html2canvas(previewRef.current, {
+    backgroundColor: "#ffffff",
+    scale: 2,
+    useCORS: true,
+    onclone: (clonedDoc) => {
+      clonedDoc
+        .querySelectorAll<HTMLImageElement>('[data-session-visual="true"]')
+        .forEach((img) => {
+          img.src = PROXY_SESSION_IMAGE_URL;
+        });
+    },
+  });
+}
+
 export function PreviewPageClient({ studentName, campus, dateTime, address, location, sessionId, contactNumber }: PreviewPageClientProps) {
   const previewRef = React.useRef<HTMLDivElement | null>(null);
   const [isExporting, setIsExporting] = React.useState(false);
@@ -42,11 +68,8 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-      });
+      const canvas = await preparePreviewCanvas(previewRef);
+      if (!canvas) return;
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
@@ -61,11 +84,8 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-      });
+      const canvas = await preparePreviewCanvas(previewRef);
+      if (!canvas) return;
       const imageData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] });
       pdf.addImage(imageData, "PNG", 0, 0, canvas.width, canvas.height);
@@ -79,11 +99,8 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-      });
+      const canvas = await preparePreviewCanvas(previewRef);
+      if (!canvas) return;
       const blob: Blob | null = await new Promise((resolve) =>
         canvas.toBlob((b) => resolve(b), "image/png")
       );
@@ -96,8 +113,13 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (locationHref) {
-        const text = `Please find the campus location for ${campus}. Click here: ${locationHref}`;
-        parts["text/plain"] = new Blob([text], { type: "text/plain" });
+        parts["text/plain"] = new Blob([`For campus location: ${locationHref}`], {
+          type: "text/plain",
+        });
+        parts["text/html"] = new Blob(
+          [buildLocationHtml(locationHref, campus, contactNumber)],
+          { type: "text/html" }
+        );
       }
       const item = new ClipboardItemCtor(parts);
       await navigator.clipboard.write([item]);
@@ -112,8 +134,21 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
   async function copyLocationLink() {
     if (!locationHref) return;
     try {
-      const text = `Please find the campus location for ${campus}. Click here: ${locationHref}`;
-      await navigator.clipboard.writeText(text);
+      const ClipboardItemCtor = (globalThis as any).ClipboardItem;
+      if (ClipboardItemCtor && navigator.clipboard?.write) {
+        const item = new ClipboardItemCtor({
+          "text/plain": new Blob([`For campus location: ${locationHref}`], {
+            type: "text/plain",
+          }),
+          "text/html": new Blob(
+            [buildLocationHtml(locationHref, campus, contactNumber)],
+            { type: "text/html" }
+          ),
+        });
+        await navigator.clipboard.write([item]);
+      } else {
+        await navigator.clipboard.writeText(`For campus location: ${locationHref}`);
+      }
       showToast("Text + link copied.");
     } catch {
       showToast("Could not copy link.");
@@ -184,16 +219,14 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
         <div className="mt-1 text-sm text-slate-600 break-words">
           {locationHref ? (
             <>
-              Please find the campus location for{" "}
-              <span className="font-semibold text-slate-900">{campus}</span>{" "}
-              .{" "}
+              For campus location:{" "}
               <a
                 href={locationHref}
                 target="_blank"
                 rel="noreferrer"
                 className="font-semibold text-indigo-700 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-800"
               >
-                Click here
+                Open location
               </a>
             </>
           ) : (

@@ -12,7 +12,7 @@ type TemplatePreviewProps = {
 };
 
 const SESSION_IMAGE_URL =
-  "https://lakshyamailerimages.s3.ap-south-1.amazonaws.com/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
+  "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
 
 export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewProps>(
   function TemplatePreview(
@@ -143,6 +143,7 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
               <img
                 src={SESSION_IMAGE_URL}
                 alt="Session visual"
+                data-session-visual="true"
                 style={{
                   width: "100%",
                   maxWidth: 260,
@@ -185,7 +186,22 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
             </div>
             <div style={{ marginTop: 10 }}>
               <span style={{ fontWeight: 700, color: "#0F172A" }}>Campus Location:</span>{" "}
-              <span>{location || "-"}</span>
+              {location ? (
+                <a
+                  href={location}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    color: "#1d4ed8",
+                    textDecoration: "underline",
+                    fontWeight: 700,
+                  }}
+                >
+                  Click here
+                </a>
+              ) : (
+                <span>-</span>
+              )}
             </div>
           </div>
         </div>

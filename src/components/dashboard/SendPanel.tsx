@@ -68,6 +68,32 @@ function toLocationHref(location: string) {
   return `https://${value}`;
 }
 
+const PROXY_SESSION_IMAGE_URL = "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
+
+async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
+  if (!previewRef.current) return null;
+  return html2canvas(previewRef.current, {
+    backgroundColor: "#ffffff",
+    scale: 2,
+    useCORS: true,
+    onclone: (clonedDoc) => {
+      clonedDoc
+        .querySelectorAll<HTMLImageElement>('[data-session-visual="true"]')
+        .forEach((img) => {
+          img.src = PROXY_SESSION_IMAGE_URL;
+        });
+    },
+  });
+}
+
+function buildLocationHtml(locationHref: string, contactNumber?: string) {
+  const lines = [`<div>For campus location: <a href="${locationHref}">Click here</a></div>`];
+  if (contactNumber?.trim()) {
+    lines.push(`<div>Please contact campus at: ${contactNumber.trim()}</div>`);
+  }
+  return lines.join("");
+}
+
 function formatTime12h(hhmm: string) {
   const m = /^(\d{2}):(\d{2})$/.exec(hhmm.trim());
   if (!m) return "";
@@ -225,11 +251,8 @@ export function SendPanel() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-      });
+      const canvas = await preparePreviewCanvas(previewRef);
+      if (!canvas) return;
       const dataUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
       link.href = dataUrl;
@@ -244,11 +267,8 @@ export function SendPanel() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-      });
+      const canvas = await preparePreviewCanvas(previewRef);
+      if (!canvas) return;
       const imageData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "portrait", unit: "px", format: [canvas.width, canvas.height] });
       pdf.addImage(imageData, "PNG", 0, 0, canvas.width, canvas.height);
@@ -262,11 +282,8 @@ export function SendPanel() {
     if (!previewRef.current) return;
     setIsExporting(true);
     try {
-      const canvas = await html2canvas(previewRef.current, {
-        backgroundColor: "#ffffff",
-        scale: 2,
-        useCORS: true,
-      });
+      const canvas = await preparePreviewCanvas(previewRef);
+      if (!canvas) return;
       const blob: Blob | null = await new Promise((resolve) =>
         canvas.toBlob((b) => resolve(b), "image/png")
       );
@@ -278,14 +295,15 @@ export function SendPanel() {
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (previewLocationHref) {
-        const lines = [
-          `Please find the campus location for ${previewCampus}. Click here: ${previewLocationHref}`,
-        ];
+        const plainLines = [`For campus location: ${previewLocationHref}`];
         if (form.contactNumber?.trim()) {
-          lines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
+          plainLines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
         }
-        const text = lines.join("\n");
-        parts["text/plain"] = new Blob([text], { type: "text/plain" });
+        parts["text/plain"] = new Blob([plainLines.join("\n")], { type: "text/plain" });
+        parts["text/html"] = new Blob(
+          [buildLocationHtml(previewLocationHref, form.contactNumber)],
+          { type: "text/html" }
+        );
       }
       const item = new ClipboardItemCtor(parts);
       await navigator.clipboard.write([item]);
@@ -300,14 +318,23 @@ export function SendPanel() {
   async function copyLocationLink() {
     if (!previewLocationHref) return;
     try {
-      const lines = [
-        `Please find the campus location for ${previewCampus}. Click here: ${previewLocationHref}`,
-      ];
+      const plainLines = [`For campus location: ${previewLocationHref}`];
       if (form.contactNumber?.trim()) {
-        lines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
+        plainLines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
       }
-      const text = lines.join("\n");
-      await navigator.clipboard.writeText(text);
+      const ClipboardItemCtor = (globalThis as any).ClipboardItem;
+      if (ClipboardItemCtor && navigator.clipboard?.write) {
+        const item = new ClipboardItemCtor({
+          "text/plain": new Blob([plainLines.join("\n")], { type: "text/plain" }),
+          "text/html": new Blob(
+            [buildLocationHtml(previewLocationHref, form.contactNumber)],
+            { type: "text/html" }
+          ),
+        });
+        await navigator.clipboard.write([item]);
+      } else {
+        await navigator.clipboard.writeText(plainLines.join("\n"));
+      }
       showToast("Text + link copied.");
     } catch {
       showToast("Could not copy link.");
@@ -586,18 +613,14 @@ export function SendPanel() {
                 <div className="mt-1 text-sm text-slate-600 break-words">
           {previewLocationHref ? (
             <>
-              Please find the campus location for{" "}
-              <span className="font-semibold text-slate-900">
-                {previewCampus}
-              </span>{" "}
-              .{" "}
+              For campus location:{" "}
               <a
                 href={previewLocationHref}
                 target="_blank"
                 rel="noreferrer"
                 className="font-semibold text-indigo-700 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-800"
               >
-                Click here
+                Open location
               </a>
             </>
           ) : (
@@ -613,7 +636,7 @@ export function SendPanel() {
                           rel="noreferrer"
                           className="inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-b from-indigo-600 to-indigo-700 px-4 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 hover:from-indigo-500 hover:to-indigo-700"
                         >
-                          Click here
+                          Open location
                         </a>
                         <Button type="button" variant="secondary" onClick={copyPreviewImage} disabled={isExporting}>
                           Copy image
