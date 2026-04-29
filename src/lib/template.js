@@ -195,11 +195,11 @@ export function generateCounsellingSessionTemplate(data) {
                                     <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">
                                       ${
                                         locationHref
-                                          ? `Please find the campus location for <strong>${escapeHtml(
-                                              campus
-                                            )}</strong>. <a href="${escapeHtml(
+                                          ? `For campus location: <a href="${escapeHtml(
                                               locationHref
-                                            )}" target="_blank" rel="noreferrer" style="color:#1d4ed8;text-decoration:underline;font-weight:700;">Click here</a>`
+                                            )}" target="_blank" rel="noreferrer" style="color:#1d4ed8;text-decoration:underline;font-weight:700;">${escapeHtml(
+                                              locationHref
+                                            )}</a>`
                                           : `${escapeHtml(location)}`
                                       }
                                     </div>
