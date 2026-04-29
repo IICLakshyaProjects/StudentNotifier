@@ -86,7 +86,8 @@ export function generateCounsellingSessionTemplate(data) {
 
   const logoUrl = abs("/api/images/WHITE.png");
   const bannerUrl = abs("/api/images/bg-banner1.png");
-  const cardImageUrl = abs("/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png");
+  const cardImageUrl =
+    "https://lakshyamailerimages.s3.ap-south-1.amazonaws.com/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
 
   // Email clients vary wildly. Avoid flex/grid/clamp/background-image; use tables + inline styles.
   return `
@@ -124,10 +125,24 @@ export function generateCounsellingSessionTemplate(data) {
                     Counselling session confirmed, please find the session details below:
                   </div>
 
-                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#003366;border-radius:16px;">
+                  <table
+                    role="presentation"
+                    cellpadding="0"
+                    cellspacing="0"
+                    border="0"
+                    width="100%"
+                    style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;"
+                  >
                     <tr>
                       <td style="padding:18px;">
-                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#ffffff;border-radius:12px;">
+                        <table
+                          role="presentation"
+                          cellpadding="0"
+                          cellspacing="0"
+                          border="0"
+                          width="100%"
+                          style="background:#ffffff;border-radius:12px;"
+                        >
                           <tr>
                             <td style="padding:18px 18px 8px 18px;">
                               <div style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#64748B;">
@@ -137,54 +152,68 @@ export function generateCounsellingSessionTemplate(data) {
                           </tr>
                           <tr>
                             <td style="padding:0 18px 18px 18px;">
-                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Campus</div>
-                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(campus)}</div>
+                              <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                                <tr>
+                                  <td valign="top" width="74%" style="padding:0 18px 16px 0;">
+                                    <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 6px 0;">Campus</div>
+                                    <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(campus)}</div>
 
-                              ${
-                                String(sessionId || "").trim()
-                                  ? `<div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">ID</div>
-                                     <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">${escapeHtml(
-                                       sessionId
-                                     )}</div>`
-                                  : ``
-                              }
+                                    ${
+                                      String(sessionId || "").trim()
+                                        ? `<div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">ID</div>
+                                           <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">${escapeHtml(
+                                             sessionId
+                                           )}</div>`
+                                        : ``
+                                    }
 
-                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Date &amp; Time</div>
-                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(dateTime)}</div>
+                                    <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Date &amp; Time</div>
+                                    <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(dateTime)}</div>
 
-                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Address</div>
-                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(address)}</div>
+                                    <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Address</div>
+                                    <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(address)}</div>
 
-                              ${
-                                extraFields && typeof extraFields === "object"
-                                  ? Object.entries(extraFields)
-                                      .filter(([, v]) => String(v ?? "").trim().length > 0)
-                                      .slice(0, 20)
-                                      .map(
-                                        ([k, v]) => `
-                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">${escapeHtml(
-                                k
-                              )}</div>
-                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(
-                                v
-                              )}</div>`
-                                      )
-                                      .join("")
-                                  : ""
-                              }
+                                    ${
+                                      extraFields && typeof extraFields === "object"
+                                        ? Object.entries(extraFields)
+                                            .filter(([, v]) => String(v ?? "").trim().length > 0)
+                                            .slice(0, 20)
+                                            .map(
+                                              ([k, v]) => `
+                                    <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">${escapeHtml(
+                                      k
+                                    )}</div>
+                                    <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(
+                                      v
+                                    )}</div>`
+                                            )
+                                            .join("")
+                                        : ""
+                                    }
 
-                              <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Location</div>
-                              <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">
-                                ${
-                                  locationHref
-                                    ? `Please find the campus location for <strong>${escapeHtml(
-                                        campus
-                                      )}</strong> here: <a href="${escapeHtml(
+                                    <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:14px 0 6px 0;">Location</div>
+                                    <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">
+                                      ${
                                         locationHref
-                                      )}" target="_blank" rel="noreferrer" style="color:#1d4ed8;text-decoration:underline;">Open location</a>`
-                                    : `${escapeHtml(location)}`
-                                }
-                              </div>
+                                          ? `Please find the campus location for <strong>${escapeHtml(
+                                              campus
+                                            )}</strong>. <a href="${escapeHtml(
+                                              locationHref
+                                            )}" target="_blank" rel="noreferrer" style="color:#1d4ed8;text-decoration:underline;font-weight:700;">Click here</a>`
+                                          : `${escapeHtml(location)}`
+                                      }
+                                    </div>
+                                  </td>
+                                  <td valign="bottom" width="26%" style="padding:0;" align="center">
+                                    <img
+                                      src="${escapeHtml(cardImageUrl)}"
+                                      alt="Session visual"
+                                      width="196"
+                                      style="display:block;width:196px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;object-fit:contain;"
+                                    >
+                                  </td>
+                                </tr>
+                              </table>
                             </td>
                           </tr>
                         </table>

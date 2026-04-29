@@ -35,6 +35,8 @@ export async function PATCH(
   const updates: any = {};
   if (body?.name !== undefined) updates.name = String(body.name).trim();
   if (body?.slug !== undefined) updates.slug = normalizeSlug(body.slug);
+  if (body?.address !== undefined) updates.address = String(body.address).trim();
+  if (body?.location !== undefined) updates.location = String(body.location).trim();
   if (body?.enabled !== undefined) updates.enabled = Boolean(body.enabled);
   if (body?.order !== undefined) {
     const o = Number(body.order);
@@ -81,4 +83,3 @@ export async function DELETE(
   if (!deleted) return NextResponse.json({ error: "not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }
-

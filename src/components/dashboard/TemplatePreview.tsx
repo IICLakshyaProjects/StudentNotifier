@@ -11,6 +11,9 @@ type TemplatePreviewProps = {
   extraFields?: Array<{ label: string; value: string }>;
 };
 
+const SESSION_IMAGE_URL =
+  "https://lakshyamailerimages.s3.ap-south-1.amazonaws.com/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
+
 export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewProps>(
   function TemplatePreview(
     { studentName, campus, dateTime, address, location, sessionId, contactNumber, extraFields = [] },
@@ -59,82 +62,96 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
             style={{
               marginTop: 24,
               borderRadius: 30,
-              background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
+              background: "#FFFFFF",
+              border: "1px solid #E2E8F0",
               padding: 24,
               position: "relative",
               minHeight: 340,
+              overflow: "visible",
             }}
           >
             <div
               style={{
-                minWidth: 0,
                 borderRadius: 28,
                 background: "#FFFFFF",
                 padding: 24,
-                boxShadow: "0 10px 30px rgba(15, 23, 42, 0.12)",
+                paddingRight: 246,
+                boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+                minHeight: 292,
               }}
             >
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "#64748B" }}>
-                Session details
-              </div>
-              <div style={{ marginTop: 20, display: "grid", gap: 18, fontSize: 15, color: "#334155" }}>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#0F172A" }}>Campus</div>
-                  <div>{campus}</div>
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#0F172A" }}>ID</div>
-                  <div style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" }}>
-                    {sessionId}
-                  </div>
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#0F172A" }}>Date & Time</div>
-                  <div>{dateTime}</div>
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, color: "#0F172A" }}>Address</div>
-                  <div>{address}</div>
-                </div>
-                {extraFields
-                  .filter((f) => String(f?.value || "").trim().length > 0)
-                  .map((f) => (
-                    <div key={f.label}>
-                      <div style={{ fontWeight: 700, color: "#0F172A" }}>
-                        {f.label}
-                      </div>
-                      <div>{f.value}</div>
-                    </div>
-                  ))}
-              </div>
-
-              <div
-                style={{
-                  marginTop: 18,
-                  width: "100%",
-                  borderRadius: 22,
-                  border: "1px solid #E2E8F0",
-                  background: "linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 14,
-                  overflow: "hidden",
-                }}
-              >
-                {/* <img
-                  src="/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png"
-                  alt="Admission card"
+              <div style={{ minWidth: 0 }}>
+                <div
                   style={{
-                    width: "min(520px, 100%)",
-                    height: "auto",
-                    objectFit: "contain",
-                    objectPosition: "center",
-                    display: "block",
-                    maxHeight: 360,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: "#64748B",
                   }}
-                /> */}
+                >
+                  Session details
+                </div>
+                <div style={{ marginTop: 20, display: "grid", gap: 18, fontSize: 15, color: "#334155" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, color: "#0F172A" }}>Campus</div>
+                    <div>{campus}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: "#0F172A" }}>ID</div>
+                    <div
+                      style={{
+                        fontFamily:
+                          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+                      }}
+                    >
+                      {sessionId}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: "#0F172A" }}>Date & Time</div>
+                    <div>{dateTime}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, color: "#0F172A" }}>Address</div>
+                    <div>{address}</div>
+                  </div>
+                  {extraFields
+                    .filter((f) => String(f?.value || "").trim().length > 0)
+                    .map((f) => (
+                      <div key={f.label}>
+                        <div style={{ fontWeight: 700, color: "#0F172A" }}>{f.label}</div>
+                        <div>{f.value}</div>
+                      </div>
+                    ))}
+                </div>
               </div>
+            </div>
+
+            <div
+              style={{
+                position: "absolute",
+                right: 24,
+                bottom: 0,
+                width: 260,
+                minWidth: 260,
+                display: "flex",
+                justifyContent: "flex-end",
+                pointerEvents: "none",
+              }}
+            >
+              <img
+                src={SESSION_IMAGE_URL}
+                alt="Session visual"
+                style={{
+                  width: "100%",
+                  maxWidth: 260,
+                  height: "auto",
+                  objectFit: "contain",
+                  objectPosition: "bottom center",
+                  display: "block",
+                }}
+              />
             </div>
           </div>
 
@@ -150,17 +167,25 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
               lineHeight: 1.7,
             }}
           >
-            <div style={{ fontWeight: 700, color: "#B45309", marginBottom: 8 }}>
-              Important
-            </div>
+            <div style={{ fontWeight: 700, color: "#B45309", marginBottom: 8 }}>Important</div>
             <div>
-              Please keep your admission card ready and confirm once received. If you have questions, please contact the campus team.
+              Please keep your admission card ready and confirm once received. If you have questions,
+              please contact the campus team.
             </div>
             <div style={{ marginTop: 10 }}>
               <span style={{ fontWeight: 700, color: "#0F172A" }}>Campus Contact No:</span>{" "}
-              <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" }}>
-                {contactNumber || "—"}
+              <span
+                style={{
+                  fontFamily:
+                    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+                }}
+              >
+                {contactNumber || "-"}
               </span>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <span style={{ fontWeight: 700, color: "#0F172A" }}>Campus Location:</span>{" "}
+              <span>{location || "-"}</span>
             </div>
           </div>
         </div>

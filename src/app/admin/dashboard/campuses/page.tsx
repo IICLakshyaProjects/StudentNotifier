@@ -11,7 +11,8 @@ import { apiFetch } from "@/lib/auth-client";
 type CampusDto = {
   _id: string;
   name: string;
-  slug: string;
+  address: string;
+  location: string;
   enabled: boolean;
   order: number;
   nextSequence: number;
@@ -21,16 +22,6 @@ type CampusDto = {
 type ListResponse = { ok: true; campuses: CampusDto[] };
 type MutResponse = { ok: true; campus: CampusDto };
 
-function toSlug(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9 -]+/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 export default function AdminCampusesPage() {
   const [campuses, setCampuses] = React.useState<CampusDto[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -39,7 +30,8 @@ export default function AdminCampusesPage() {
 
   const [createForm, setCreateForm] = React.useState({
     name: "",
-    slug: "",
+    address: "",
+    location: "",
     enabled: true,
     order: 0,
   });
@@ -47,7 +39,8 @@ export default function AdminCampusesPage() {
   const [editing, setEditing] = React.useState<CampusDto | null>(null);
   const [editForm, setEditForm] = React.useState({
     name: "",
-    slug: "",
+    address: "",
+    location: "",
     enabled: true,
     order: 0,
     nextSequence: 1,
@@ -78,17 +71,15 @@ export default function AdminCampusesPage() {
   async function createCampus() {
     setError(null);
     try {
-      const payload = {
-        ...createForm,
-        slug: toSlug(createForm.slug || createForm.name),
-      };
       const res = await apiFetch<MutResponse>("/api/admin/campuses", {
         method: "POST",
-        json: payload,
+        json: createForm,
       });
       showToast("Campus created");
-      setCreateForm({ name: "", slug: "", enabled: true, order: 0 });
-      setCampuses((prev) => [...prev, res.campus].sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name)));
+      setCreateForm({ name: "", address: "", location: "", enabled: true, order: 0 });
+      setCampuses((prev) =>
+        [...prev, res.campus].sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name))
+      );
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Create failed");
     }
@@ -98,16 +89,16 @@ export default function AdminCampusesPage() {
     if (!editing) return;
     setError(null);
     try {
-      const payload = {
-        ...editForm,
-        slug: toSlug(editForm.slug || editForm.name),
-      };
       const res = await apiFetch<MutResponse>(`/api/admin/campuses/${editing._id}`, {
         method: "PATCH",
-        json: payload,
+        json: editForm,
       });
       showToast("Campus updated");
-      setCampuses((prev) => prev.map((c) => (c._id === editing._id ? res.campus : c)).sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name)));
+      setCampuses((prev) =>
+        prev
+          .map((c) => (c._id === editing._id ? res.campus : c))
+          .sort((a, b) => (a.order - b.order) || a.name.localeCompare(b.name))
+      );
       setEditing(null);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Update failed");
@@ -151,16 +142,24 @@ export default function AdminCampusesPage() {
             label="Campus name"
             value={createForm.name}
             onChange={(e) =>
-              setCreateForm((s) => ({ ...s, name: e.target.value, slug: s.slug ? s.slug : toSlug(e.target.value) }))
+              setCreateForm((s) => ({
+                ...s,
+                name: e.target.value,
+              }))
             }
             placeholder="e.g. Kochi"
           />
           <Input
-            label="Slug"
-            value={createForm.slug}
-            onChange={(e) => setCreateForm((s) => ({ ...s, slug: e.target.value }))}
-            hint="Used for ID generation"
-            placeholder="e.g. kochi"
+            label="Address"
+            value={createForm.address}
+            onChange={(e) => setCreateForm((s) => ({ ...s, address: e.target.value }))}
+            placeholder="Campus address"
+          />
+          <Input
+            label="Location link"
+            value={createForm.location}
+            onChange={(e) => setCreateForm((s) => ({ ...s, location: e.target.value }))}
+            placeholder="https://maps.google.com/..."
           />
           <div className="rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3">
             <div className="text-xs font-semibold text-slate-700">Options</div>
@@ -203,7 +202,8 @@ export default function AdminCampusesPage() {
             <thead>
               <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <th className="py-2 pr-4">Name</th>
-                <th className="py-2 pr-4">Slug</th>
+                <th className="py-2 pr-4">Address</th>
+                <th className="py-2 pr-4">Location</th>
                 <th className="py-2 pr-4">Enabled</th>
                 <th className="py-2 pr-4">Order</th>
                 <th className="py-2 pr-4">Next ID</th>
@@ -213,15 +213,29 @@ export default function AdminCampusesPage() {
             <tbody className="divide-y divide-slate-200/60">
               {isLoading ? (
                 <tr>
-                  <td className="py-4 text-slate-500" colSpan={6}>
-                    Loading…
+                  <td className="py-4 text-slate-500" colSpan={7}>
+                    Loading...
                   </td>
                 </tr>
               ) : campuses.length ? (
                 campuses.map((c) => (
                   <tr key={c._id} className="text-slate-800">
                     <td className="py-3 pr-4 font-medium text-slate-900">{c.name}</td>
-                    <td className="py-3 pr-4 font-mono text-xs text-slate-600">{c.slug}</td>
+                    <td className="py-3 pr-4 text-slate-600">{c.address || "-"}</td>
+                    <td className="py-3 pr-4">
+                      {c.location ? (
+                        <a
+                          href={c.location}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium text-indigo-700 hover:text-indigo-800"
+                        >
+                          Click here
+                        </a>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </td>
                     <td className="py-3 pr-4">{c.enabled ? "Yes" : "No"}</td>
                     <td className="py-3 pr-4">{c.order}</td>
                     <td className="py-3 pr-4 font-mono text-xs text-slate-600">
@@ -236,7 +250,8 @@ export default function AdminCampusesPage() {
                             setEditing(c);
                             setEditForm({
                               name: c.name,
-                              slug: c.slug,
+                              address: c.address || "",
+                              location: c.location || "",
                               enabled: c.enabled,
                               order: c.order,
                               nextSequence: c.nextSequence || 1,
@@ -254,7 +269,7 @@ export default function AdminCampusesPage() {
                 ))
               ) : (
                 <tr>
-                  <td className="py-4 text-slate-500" colSpan={6}>
+                  <td className="py-4 text-slate-500" colSpan={7}>
                     No campuses yet.
                   </td>
                 </tr>
@@ -275,9 +290,16 @@ export default function AdminCampusesPage() {
                 onChange={(e) => setEditForm((s) => ({ ...s, name: e.target.value }))}
               />
               <Input
-                label="Slug"
-                value={editForm.slug}
-                onChange={(e) => setEditForm((s) => ({ ...s, slug: e.target.value }))}
+                label="Address"
+                value={editForm.address}
+                onChange={(e) => setEditForm((s) => ({ ...s, address: e.target.value }))}
+                placeholder="Campus address"
+              />
+              <Input
+                label="Location link"
+                value={editForm.location}
+                onChange={(e) => setEditForm((s) => ({ ...s, location: e.target.value }))}
+                placeholder="https://maps.google.com/..."
               />
 
               <div className="rounded-2xl border border-slate-200/70 bg-white/70 px-4 py-3 md:col-span-2">
@@ -335,4 +357,3 @@ export default function AdminCampusesPage() {
     </div>
   );
 }
-

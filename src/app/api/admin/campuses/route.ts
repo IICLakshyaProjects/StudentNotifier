@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
   await connectDB();
   const campuses = await Campus.find({})
-    .select("_id name slug enabled order nextSequence createdAt")
+    .select("_id name slug address location enabled order nextSequence createdAt")
     .sort({ order: 1, createdAt: 1 })
     .lean();
 
@@ -39,9 +39,11 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const name = String(body?.name ?? "").trim();
-  const slug = normalizeSlug(body?.slug || name);
+  const address = String(body?.address ?? "").trim();
+  const location = String(body?.location ?? "").trim();
   const enabled = body?.enabled === undefined ? true : Boolean(body?.enabled);
   const order = Number(body?.order ?? 0);
+  const slug = normalizeSlug(body?.slug || name);
 
   if (!name) return badRequest("name is required");
   if (!slug) return badRequest("slug is required");
@@ -51,6 +53,8 @@ export async function POST(request: Request) {
     const created = await Campus.create({
       name,
       slug,
+      address,
+      location,
       enabled,
       order: Number.isFinite(order) ? order : 0,
       nextSequence: 1,
@@ -64,4 +68,3 @@ export async function POST(request: Request) {
     throw e;
   }
 }
-

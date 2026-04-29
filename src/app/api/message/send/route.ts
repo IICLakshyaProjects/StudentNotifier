@@ -22,6 +22,20 @@ function badRequest(error: string) {
   return NextResponse.json({ error }, { status: 400 });
 }
 
+function toSlug(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9 -]+/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function compactSlug(input: string) {
+  return input.replace(/[^a-z0-9]+/gi, "").toLowerCase();
+}
+
 export async function POST(request: Request) {
   const auth = await requireAuth(request);
   if (!auth.ok) return auth.response;
@@ -49,27 +63,40 @@ export async function POST(request: Request) {
   if (!campus) return badRequest("campus is required");
   if (!date) return badRequest("date is required");
   if (!time) return badRequest("time is required");
-  if (!address) return badRequest("address is required");
-  if (!location) return badRequest("location is required");
+
+  await connectDB();
+
+  const campusDoc = await Campus.findOne({
+    $or: [{ name: campus }, { slug: toSlug(campus) }, { slug: compactSlug(campus) }],
+  })
+    .select("name slug address location nextSequence")
+    .lean();
+
+  const resolvedCampusName = campusDoc?.name || campus;
+  const resolvedAddress = address || normalizeString((campusDoc as any)?.address);
+  const resolvedLocation = location || normalizeString((campusDoc as any)?.location);
+  if (!resolvedAddress) return badRequest("address is required");
+  if (!resolvedLocation) return badRequest("location is required");
 
   const text = buildCounsellingMessage({
     studentName,
-    campus,
+    campus: resolvedCampusName,
     date,
     time,
-    location,
+    location: resolvedLocation,
   });
-  await connectDB();
 
   // Generate a persistent, per-campus sequential ID (5 digits), atomically
-  const campusSlug =
-    campus.replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 10) || "CAMPUS";
+  const campusRecordSlug = campusDoc?.slug || toSlug(campus) || compactSlug(campus) || "campus";
+  const campusSlug = campusRecordSlug.replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 10) || "CAMPUS";
   const updated = await Campus.findOneAndUpdate(
-    { slug: campusSlug.toLowerCase() },
+    { slug: campusRecordSlug },
     {
       $setOnInsert: {
-        name: campus,
-        slug: campusSlug.toLowerCase(),
+        name: resolvedCampusName,
+        slug: campusRecordSlug,
+        address: resolvedAddress,
+        location: resolvedLocation,
         enabled: true,
         order: 0,
       },
@@ -88,11 +115,11 @@ export async function POST(request: Request) {
   const html = buildCounsellingEmailHtml({
     baseUrl: process.env.APP_URL,
     studentName,
-    campus,
+    campus: resolvedCampusName,
     date,
     time,
-    address,
-    location,
+    address: resolvedAddress,
+    location: resolvedLocation,
     contactNumber,
     extraFields,
     sessionId,
@@ -102,11 +129,11 @@ export async function POST(request: Request) {
     studentName,
     email,
     whatsapp,
-    campus,
+    campus: resolvedCampusName,
     date,
     time,
-    address,
-    location,
+    address: resolvedAddress,
+    location: resolvedLocation,
     sessionId,
     extraFields,
     status: "pending",
@@ -153,13 +180,12 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: status === "sent",
-    message: {
-      id: msg._id.toString(),
-      status: msg.status,
-      sessionId: msg.sessionId,
-    },
+      message: {
+        id: msg._id.toString(),
+        status: msg.status,
+        sessionId: msg.sessionId,
+      },
     results: { whatsapp: whatsappResult, email: emailResult },
     errors,
   });
 }
-
