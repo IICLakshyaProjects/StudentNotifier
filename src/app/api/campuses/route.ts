@@ -8,10 +8,9 @@ export const runtime = "nodejs";
 export async function GET() {
   await connectDB();
   const campuses = await Campus.find({ enabled: true })
-    .select("_id name slug order enabled nextSequence")
+    .select("_id name slug address location order enabled nextSequence")
     .sort({ order: 1, createdAt: 1 })
     .lean();
 
   return NextResponse.json({ ok: true, campuses });
 }
-

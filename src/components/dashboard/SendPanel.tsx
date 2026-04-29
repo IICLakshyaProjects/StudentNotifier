@@ -37,7 +37,14 @@ type PublicField = {
 
 type FieldsResponse = { ok: true; fields: PublicField[] };
 
-type CampusDto = { _id: string; name: string; slug: string; nextSequence?: number };
+type CampusDto = {
+  _id: string;
+  name: string;
+  slug: string;
+  address?: string;
+  location?: string;
+  nextSequence?: number;
+};
 type CampusesResponse = { ok: true; campuses: CampusDto[] };
 
 function campusSlug(campus: string) {
@@ -143,6 +150,34 @@ export function SendPanel() {
       .catch(() => setCampuses([]));
   }, []);
 
+  React.useEffect(() => {
+    if (!form.campus) {
+      setForm((prev) => {
+        if (!prev.address && !prev.location) return prev;
+        return { ...prev, address: "", location: "" };
+      });
+      return;
+    }
+    const selectedCampus = campuses.find((c) => c.name === form.campus);
+    if (!selectedCampus) {
+      setForm((prev) => {
+        if (!prev.address && !prev.location) return prev;
+        return { ...prev, address: "", location: "" };
+      });
+      return;
+    }
+    setForm((prev) => {
+      const nextAddress = selectedCampus.address || "";
+      const nextLocation = selectedCampus.location || "";
+      if (prev.address === nextAddress && prev.location === nextLocation) return prev;
+      return {
+        ...prev,
+        address: nextAddress,
+        location: nextLocation,
+      };
+    });
+  }, [campuses, form.campus]);
+
   const previewStudentName = form.studentName || "Student name";
   const previewCampus = form.campus || "Campus";
   const previewTime = form.time ? formatTime12h(form.time) : "";
@@ -175,6 +210,16 @@ export function SendPanel() {
   )}&location=${encodeURIComponent(form.location || "")}&contactNumber=${encodeURIComponent(
     form.contactNumber || ""
   )}`;
+
+  function applyCampusSelection(campusName: string) {
+    const selectedCampus = campuses.find((c) => c.name === campusName);
+    setForm((prev) => ({
+      ...prev,
+      campus: campusName,
+      address: selectedCampus?.address || "",
+      location: selectedCampus?.location || "",
+    }));
+  }
 
   async function downloadPreviewImage() {
     if (!previewRef.current) return;
@@ -234,7 +279,7 @@ export function SendPanel() {
       const parts: Record<string, Blob> = { "image/png": blob };
       if (previewLocationHref) {
         const lines = [
-          `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`,
+          `Please find the campus location for ${previewCampus}. Click here: ${previewLocationHref}`,
         ];
         if (form.contactNumber?.trim()) {
           lines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
@@ -256,7 +301,7 @@ export function SendPanel() {
     if (!previewLocationHref) return;
     try {
       const lines = [
-        `Please find the campus location for ${previewCampus} here: ${previewLocationHref}`,
+        `Please find the campus location for ${previewCampus}. Click here: ${previewLocationHref}`,
       ];
       if (form.contactNumber?.trim()) {
         lines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
@@ -331,7 +376,7 @@ export function SendPanel() {
                 <select
                   className="h-11 w-full rounded-xl border border-slate-200/80 bg-white/80 px-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 backdrop-blur focus:outline-none focus:ring-2 focus:ring-[var(--ring)]"
                   value={form.campus}
-                  onChange={(e) => setForm({ ...form, campus: e.target.value })}
+                  onChange={(e) => applyCampusSelection(e.target.value)}
                 >
                   <option value="">Select campus…</option>
                   {campuses.map((c) => (
@@ -538,17 +583,25 @@ export function SendPanel() {
 
                 <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/70 p-4">
                   <div className="text-sm font-semibold text-slate-900">Location</div>
-                  <div className="mt-1 text-sm text-slate-600 break-words">
-                    {previewLocationHref ? (
-                      <>
-                        Please find the campus location for{" "}
-                        <span className="font-semibold text-slate-900">
-                          {previewCampus}
-                        </span>{" "}
-                        here.
-                      </>
-                    ) : (
-                      previewLocation
+                <div className="mt-1 text-sm text-slate-600 break-words">
+          {previewLocationHref ? (
+            <>
+              Please find the campus location for{" "}
+              <span className="font-semibold text-slate-900">
+                {previewCampus}
+              </span>{" "}
+              .{" "}
+              <a
+                href={previewLocationHref}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-indigo-700 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-800"
+              >
+                Click here
+              </a>
+            </>
+          ) : (
+            previewLocation
                     )}
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -560,7 +613,7 @@ export function SendPanel() {
                           rel="noreferrer"
                           className="inline-flex h-11 items-center justify-center rounded-xl bg-gradient-to-b from-indigo-600 to-indigo-700 px-4 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 hover:from-indigo-500 hover:to-indigo-700"
                         >
-                          Open location
+                          Click here
                         </a>
                         <Button type="button" variant="secondary" onClick={copyPreviewImage} disabled={isExporting}>
                           Copy image

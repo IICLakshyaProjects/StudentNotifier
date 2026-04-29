@@ -96,7 +96,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (locationHref) {
-        const text = `Please find the campus location for ${campus} here: ${locationHref}`;
+        const text = `Please find the campus location for ${campus}. Click here: ${locationHref}`;
         parts["text/plain"] = new Blob([text], { type: "text/plain" });
       }
       const item = new ClipboardItemCtor(parts);
@@ -112,7 +112,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
   async function copyLocationLink() {
     if (!locationHref) return;
     try {
-      const text = `Please find the campus location for ${campus} here: ${locationHref}`;
+      const text = `Please find the campus location for ${campus}. Click here: ${locationHref}`;
       await navigator.clipboard.writeText(text);
       showToast("Text + link copied.");
     } catch {
@@ -186,7 +186,15 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
             <>
               Please find the campus location for{" "}
               <span className="font-semibold text-slate-900">{campus}</span>{" "}
-              here.
+              .{" "}
+              <a
+                href={locationHref}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-indigo-700 underline decoration-indigo-300 underline-offset-2 hover:text-indigo-800"
+              >
+                Click here
+              </a>
             </>
           ) : (
             location

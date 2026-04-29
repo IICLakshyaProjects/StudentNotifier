@@ -43,6 +43,20 @@ function normalizeHeader(h: unknown): string {
   return String(h ?? "").trim();
 }
 
+function toSlug(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9 -]+/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function compactSlug(input: string) {
+  return input.replace(/[^a-z0-9]+/gi, "").toLowerCase();
+}
+
 type RowRecord = Record<string, unknown>;
 
 function parseCsv(buffer: Buffer): Promise<RowRecord[]> {
@@ -122,17 +136,26 @@ async function sendOne({
   const location = normalizeString(record.location);
   const extraFields = record.extraFields && typeof record.extraFields === "object" ? record.extraFields : {};
 
+  const campusSlugCandidate = toSlug(campus);
+  const campusRecord = await Campus.findOne({
+    $or: [{ name: campus }, { slug: campusSlugCandidate }, { slug: compactSlug(campus) }],
+  })
+    .select("_id slug nextSequence")
+    .lean();
+  const campusRecordSlug = campusRecord?.slug || campusSlugCandidate || compactSlug(campus) || "campus";
   const campusSlug =
-    campus.replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 10) || "CAMPUS";
+    campusRecordSlug.replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 10) || "CAMPUS";
   const campusUpdated = await Campus.findOneAndUpdate(
-    { slug: campusSlug.toLowerCase() },
-    {
-      $setOnInsert: {
-        name: campus,
-        slug: campusSlug.toLowerCase(),
-        enabled: true,
-        order: 0,
-      },
+    { slug: campusRecordSlug },
+        {
+          $setOnInsert: {
+            name: campus,
+            slug: campusRecordSlug,
+            address: address || "",
+            location: "",
+            enabled: true,
+            order: 0,
+          },
       $inc: { nextSequence: 1 },
     },
     {
@@ -402,4 +425,3 @@ export async function POST(request: Request) {
     results,
   });
 }
-
