@@ -52,14 +52,6 @@ function campusSlug(campus: string) {
   return (cleaned || "CAMPUS").toUpperCase().slice(0, 10);
 }
 
-function hashTo6Digits(input: string) {
-  let h = 0;
-  for (let i = 0; i < input.length; i++) {
-    h = (h * 31 + input.charCodeAt(i)) >>> 0;
-  }
-  return String(h % 1_000_000).padStart(6, "0");
-}
-
 function toLocationHref(location: string) {
   const value = location.trim();
   if (!value) return "";
@@ -69,6 +61,8 @@ function toLocationHref(location: string) {
 }
 
 const PROXY_SESSION_IMAGE_URL = "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
+const COPY_TEMPLATE =
+  "Congratulation your conceling session have been booked suvessfully , please find the admit card attached";
 
 async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
   if (!previewRef.current) return null;
@@ -92,6 +86,15 @@ function buildLocationHtml(locationHref: string, contactNumber?: string) {
     lines.push(`<div>Please contact campus at: ${contactNumber.trim()}</div>`);
   }
   return lines.join("");
+}
+
+function buildCopyText(locationHref: string, contactNumber?: string) {
+  return [
+    COPY_TEMPLATE,
+    "",
+    `Campus location: ${locationHref || "-"}`,
+    `Contact NUmber : ${contactNumber?.trim() || "-"}`,
+  ].join("\n");
 }
 
 function formatTime12h(hhmm: string) {
@@ -175,34 +178,6 @@ export function SendPanel() {
       )
       .catch(() => setCampuses([]));
   }, []);
-
-  React.useEffect(() => {
-    if (!form.campus) {
-      setForm((prev) => {
-        if (!prev.address && !prev.location) return prev;
-        return { ...prev, address: "", location: "" };
-      });
-      return;
-    }
-    const selectedCampus = campuses.find((c) => c.name === form.campus);
-    if (!selectedCampus) {
-      setForm((prev) => {
-        if (!prev.address && !prev.location) return prev;
-        return { ...prev, address: "", location: "" };
-      });
-      return;
-    }
-    setForm((prev) => {
-      const nextAddress = selectedCampus.address || "";
-      const nextLocation = selectedCampus.location || "";
-      if (prev.address === nextAddress && prev.location === nextLocation) return prev;
-      return {
-        ...prev,
-        address: nextAddress,
-        location: nextLocation,
-      };
-    });
-  }, [campuses, form.campus]);
 
   const previewStudentName = form.studentName || "Student name";
   const previewCampus = form.campus || "Campus";
@@ -289,25 +264,28 @@ export function SendPanel() {
       );
       if (!blob) throw new Error("Unable to create image");
 
-      const ClipboardItemCtor = (globalThis as any).ClipboardItem;
+      const ClipboardItemCtor = globalThis.ClipboardItem as typeof ClipboardItem | undefined;
       if (!ClipboardItemCtor || !navigator.clipboard?.write) {
         throw new Error("clipboard not supported");
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (previewLocationHref) {
-        const plainLines = [`For campus location: ${previewLocationHref}`];
-        if (form.contactNumber?.trim()) {
-          plainLines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
-        }
-        parts["text/plain"] = new Blob([plainLines.join("\n")], { type: "text/plain" });
+        parts["text/plain"] = new Blob([buildCopyText(previewLocationHref, form.contactNumber)], {
+          type: "text/plain",
+        });
         parts["text/html"] = new Blob(
           [buildLocationHtml(previewLocationHref, form.contactNumber)],
           { type: "text/html" }
         );
+      } else {
+        parts["text/plain"] = new Blob(
+          [buildCopyText(previewLocationHref, form.contactNumber)],
+          { type: "text/plain" }
+        );
       }
       const item = new ClipboardItemCtor(parts);
       await navigator.clipboard.write([item]);
-      showToast(previewLocationHref ? "Image + location copied. Paste it where you need." : "Image copied. Paste it where you need.");
+      showToast(previewLocationHref ? "Image + message copied." : "Image copied.");
     } catch {
       showToast("Copy not supported here. Use Download PNG.");
     } finally {
@@ -318,14 +296,11 @@ export function SendPanel() {
   async function copyLocationLink() {
     if (!previewLocationHref) return;
     try {
-      const plainLines = [`For campus location: ${previewLocationHref}`];
-      if (form.contactNumber?.trim()) {
-        plainLines.push(`Please contact campus at: ${form.contactNumber.trim()}`);
-      }
-      const ClipboardItemCtor = (globalThis as any).ClipboardItem;
+      const plainText = buildCopyText(previewLocationHref, form.contactNumber);
+      const ClipboardItemCtor = globalThis.ClipboardItem as typeof ClipboardItem | undefined;
       if (ClipboardItemCtor && navigator.clipboard?.write) {
         const item = new ClipboardItemCtor({
-          "text/plain": new Blob([plainLines.join("\n")], { type: "text/plain" }),
+          "text/plain": new Blob([plainText], { type: "text/plain" }),
           "text/html": new Blob(
             [buildLocationHtml(previewLocationHref, form.contactNumber)],
             { type: "text/html" }
@@ -333,7 +308,7 @@ export function SendPanel() {
         });
         await navigator.clipboard.write([item]);
       } else {
-        await navigator.clipboard.writeText(plainLines.join("\n"));
+        await navigator.clipboard.writeText(plainText);
       }
       showToast("Text + link copied.");
     } catch {

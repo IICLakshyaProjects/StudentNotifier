@@ -34,7 +34,18 @@ function buildLocationHtml(locationHref: string, campus: string, contactNumber?:
   return lines.join("");
 }
 
+function buildCopyText(locationHref: string, contactNumber?: string) {
+  return [
+    COPY_TEMPLATE,
+    "",
+    `Campus location: ${locationHref || "-"}`,
+    `Contact NUmber : ${contactNumber?.trim() || "-"}`,
+  ].join("\n");
+}
+
 const PROXY_SESSION_IMAGE_URL = "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
+const COPY_TEMPLATE =
+  "Congratulation your conceling session have been booked suvessfully , please find the admit card attached";
 
 async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
   if (!previewRef.current) return null;
@@ -107,23 +118,27 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
       if (!blob) throw new Error("Unable to create image");
 
       // ClipboardItem is supported in modern Chrome/Edge. WhatsApp Web paste works there.
-      const ClipboardItemCtor = (globalThis as any).ClipboardItem;
+      const ClipboardItemCtor = globalThis.ClipboardItem as typeof ClipboardItem | undefined;
       if (!ClipboardItemCtor || !navigator.clipboard?.write) {
         throw new Error("clipboard not supported");
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (locationHref) {
-        parts["text/plain"] = new Blob([`For campus location: ${locationHref}`], {
+        parts["text/plain"] = new Blob([buildCopyText(locationHref, contactNumber)], {
           type: "text/plain",
         });
         parts["text/html"] = new Blob(
           [buildLocationHtml(locationHref, campus, contactNumber)],
           { type: "text/html" }
         );
+      } else {
+        parts["text/plain"] = new Blob([buildCopyText(locationHref, contactNumber)], {
+          type: "text/plain",
+        });
       }
       const item = new ClipboardItemCtor(parts);
       await navigator.clipboard.write([item]);
-      showToast(locationHref ? "Image + location copied. Paste it in WhatsApp Web." : "Image copied. Paste it in WhatsApp Web.");
+      showToast(locationHref ? "Image + message copied." : "Image copied.");
     } catch {
       showToast("Copy not supported in this browser. Use Download PNG.");
     } finally {
@@ -134,10 +149,11 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
   async function copyLocationLink() {
     if (!locationHref) return;
     try {
-      const ClipboardItemCtor = (globalThis as any).ClipboardItem;
+      const plainText = buildCopyText(locationHref, contactNumber);
+      const ClipboardItemCtor = globalThis.ClipboardItem as typeof ClipboardItem | undefined;
       if (ClipboardItemCtor && navigator.clipboard?.write) {
         const item = new ClipboardItemCtor({
-          "text/plain": new Blob([`For campus location: ${locationHref}`], {
+          "text/plain": new Blob([plainText], {
             type: "text/plain",
           }),
           "text/html": new Blob(
@@ -147,7 +163,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
         });
         await navigator.clipboard.write([item]);
       } else {
-        await navigator.clipboard.writeText(`For campus location: ${locationHref}`);
+        await navigator.clipboard.writeText(plainText);
       }
       showToast("Text + link copied.");
     } catch {
