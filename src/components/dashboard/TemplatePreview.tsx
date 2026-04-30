@@ -52,10 +52,7 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
         </div>
         <div style={{ padding: 28 }}>
           <p style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#0F172A" }}>
-            Hi {studentName},
-          </p>
-          <p style={{ marginTop: 12, fontSize: 15, lineHeight: 1.7, color: "#334155" }}>
-            Counselling session confirmed, please find the session details below:
+            Admit Card
           </p>
 
           <div
@@ -93,6 +90,10 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
                   Session details
                 </div>
                 <div style={{ marginTop: 20, display: "grid", gap: 18, fontSize: 15, color: "#334155" }}>
+                  <div>
+                    <div style={{ fontWeight: 700, color: "#0F172A" }}>Student name</div>
+                    <div>{studentName}</div>
+                  </div>
                   <div>
                     <div style={{ fontWeight: 700, color: "#0F172A" }}>Campus</div>
                     <div>{campus}</div>
@@ -170,8 +171,7 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
           >
             <div style={{ fontWeight: 700, color: "#B45309", marginBottom: 8 }}>Important</div>
             <div>
-              Please keep your admission card ready and confirm once received. If you have questions,
-              please contact the campus team.
+              Admit Card
             </div>
             <div style={{ marginTop: 10 }}>
               <span style={{ fontWeight: 700, color: "#0F172A" }}>Campus Contact No:</span>{" "}

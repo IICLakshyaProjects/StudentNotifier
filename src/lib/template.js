@@ -56,7 +56,6 @@ export function escapeHtml(input) {
  */
 export function generateCounsellingSessionTemplate(data) {
   const {
-    baseUrl = process.env.APP_URL || "",
     studentName = "Student",
     campus = "[Campus]",
     dateTime = "[Date and Time]",
@@ -66,16 +65,6 @@ export function generateCounsellingSessionTemplate(data) {
     extraFields = {},
     sessionId = "",
   } = data || {};
-
-  const normalizedBaseUrl = String(baseUrl || "").trim().replace(/\/+$/, "");
-  function abs(path) {
-    const p = String(path || "");
-    if (!p) return "";
-    if (/^https?:\/\//i.test(p)) return p;
-    if (!normalizedBaseUrl) return p;
-    if (!p.startsWith("/")) return `${normalizedBaseUrl}/${p}`;
-    return `${normalizedBaseUrl}${p}`;
-  }
   const locationHref = (() => {
     const value = String(location || "").trim();
     if (!value) return "";
@@ -84,8 +73,6 @@ export function generateCounsellingSessionTemplate(data) {
     return `https://${value}`;
   })();
 
-  const logoUrl = abs("/api/images/WHITE.png");
-  const bannerUrl = abs("/api/images/bg-banner1.png");
   const cardImageUrl =
     "https://lakshyamailerimages.s3.ap-south-1.amazonaws.com/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
 
@@ -121,9 +108,6 @@ export function generateCounsellingSessionTemplate(data) {
                   <div style="font-size:24px;font-weight:700;color:#003366;line-height:1.35;margin:0 0 10px 0;">
                     Hi ${escapeHtml(studentName)},
                   </div>
-                  <div style="font-size:16px;color:#333333;line-height:1.6;margin:0 0 18px 0;">
-                    Counselling session confirmed, please find the session details below:
-                  </div>
 
                   <table
                     role="presentation"
@@ -154,9 +138,17 @@ export function generateCounsellingSessionTemplate(data) {
                             <td style="padding:0 18px 18px 18px;">
                               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                                 <tr>
-                                  <td valign="top" width="74%" style="padding:0 18px 16px 0;">
+                                  <td valign="top" width="50%" style="padding:0 12px 14px 0;">
+                                    <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 6px 0;">Student name</div>
+                                    <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(studentName)}</div>
+                                  </td>
+                                  <td valign="top" width="50%" style="padding:0 0 14px 12px;">
                                     <div style="font-size:13px;font-weight:700;color:#003366;letter-spacing:0.5px;text-transform:uppercase;margin:0 0 6px 0;">Campus</div>
                                     <div style="font-size:15px;color:#333333;line-height:1.5;word-break:break-word;">${escapeHtml(campus)}</div>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td valign="top" width="50%" style="padding:0 12px 14px 0;">
 
                                     ${
                                       String(sessionId || "").trim()
@@ -223,11 +215,10 @@ export function generateCounsellingSessionTemplate(data) {
 
                   <div style="margin-top:18px;background:#FFFBEB;border:2px solid #FBBF24;border-radius:12px;padding:16px;font-size:15px;color:#333333;line-height:1.7;">
                     <div style="font-weight:700;color:#B45309;margin:0 0 8px 0;font-size:16px;">Important</div>
-                    Please keep your admission card ready and confirm once received.<br>
-                    If you have questions, please contact the campus team.
+                    Admit Card<br>
                     ${
                       String(contactNumber || "").trim()
-                        ? `<br><span style="font-weight:700;color:#0F172A;">Contact:</span> <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">${escapeHtml(contactNumber)}</span>`
+                        ? `<br><span style="font-weight:700;color:#0F172A;">Campus Contact No:</span> <span style="font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;">${escapeHtml(contactNumber)}</span>`
                         : ``
                     }
                   </div>

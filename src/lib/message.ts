@@ -1,15 +1,7 @@
 import { renderNumberedTemplate, generateCounsellingSessionTemplate } from "@/lib/template";
-import { escapeHtml } from "@/lib/template";
 
-export const DEFAULT_TEMPLATE = `Hi {{1}}, your counselling session is confirmed.
-
-Campus: {{2}}
-Date: {{3}}
-Time: {{4}}
-
-Location: {{5}}
-
-Please keep your admission card ready and confirm once received.`;
+export const DEFAULT_TEMPLATE =
+  "congratulation  your Counselling session confirmed, please find the admint card attached .";
 
 export type CounsellingMessageInput = {
   studentName: string;
@@ -51,4 +43,3 @@ export function buildCounsellingEmailHtml(input: CounsellingMessageInput) {
     sessionId: input.sessionId,
   });
 }
-
