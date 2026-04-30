@@ -62,7 +62,7 @@ function toLocationHref(location: string) {
 
 const PROXY_SESSION_IMAGE_URL = "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
 const COPY_TEMPLATE =
-  "Congratulation your conceling session have been booked suvessfully , please find the admit card attached";
+  "Congratulations! Your counselling session has been successfully booked. Please find the attached admit card";
 
 async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
   if (!previewRef.current) return null;
@@ -88,12 +88,14 @@ function buildLocationHtml(locationHref: string, contactNumber?: string) {
   return lines.join("");
 }
 
-function buildCopyText(locationHref: string, contactNumber?: string) {
+function buildCopyText(studentName: string, locationHref: string, contactNumber?: string) {
   return [
+    `Dear ${studentName || "Student"},`,
+    "",
     COPY_TEMPLATE,
     "",
     `Campus location: ${locationHref || "-"}`,
-    `Contact NUmber : ${contactNumber?.trim() || "-"}`,
+    `Contact Number : ${contactNumber?.trim() || "-"}`,
   ].join("\n");
 }
 
@@ -270,16 +272,17 @@ export function SendPanel() {
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (previewLocationHref) {
-        parts["text/plain"] = new Blob([buildCopyText(previewLocationHref, form.contactNumber)], {
-          type: "text/plain",
-        });
+        parts["text/plain"] = new Blob(
+          [buildCopyText(previewStudentName, previewLocationHref, form.contactNumber)],
+          { type: "text/plain" }
+        );
         parts["text/html"] = new Blob(
           [buildLocationHtml(previewLocationHref, form.contactNumber)],
           { type: "text/html" }
         );
       } else {
         parts["text/plain"] = new Blob(
-          [buildCopyText(previewLocationHref, form.contactNumber)],
+          [buildCopyText(previewStudentName, previewLocationHref, form.contactNumber)],
           { type: "text/plain" }
         );
       }
@@ -296,7 +299,7 @@ export function SendPanel() {
   async function copyLocationLink() {
     if (!previewLocationHref) return;
     try {
-      const plainText = buildCopyText(previewLocationHref, form.contactNumber);
+      const plainText = buildCopyText(previewStudentName, previewLocationHref, form.contactNumber);
       const ClipboardItemCtor = globalThis.ClipboardItem as typeof ClipboardItem | undefined;
       if (ClipboardItemCtor && navigator.clipboard?.write) {
         const item = new ClipboardItemCtor({

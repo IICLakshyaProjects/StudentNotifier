@@ -34,18 +34,20 @@ function buildLocationHtml(locationHref: string, campus: string, contactNumber?:
   return lines.join("");
 }
 
-function buildCopyText(locationHref: string, contactNumber?: string) {
+function buildCopyText(studentName: string, locationHref: string, contactNumber?: string) {
   return [
+    `Dear ${studentName || "Student"},`,
+    "",
     COPY_TEMPLATE,
     "",
     `Campus location: ${locationHref || "-"}`,
-    `Contact NUmber : ${contactNumber?.trim() || "-"}`,
+    `Contact Number : ${contactNumber?.trim() || "-"}`,
   ].join("\n");
 }
 
 const PROXY_SESSION_IMAGE_URL = "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
 const COPY_TEMPLATE =
-  "Congratulation your conceling session have been booked suvessfully , please find the admit card attached";
+  "Congratulations, your counselling session has been booked successfully. Please find the admit card attached";
 
 async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
   if (!previewRef.current) return null;
@@ -124,7 +126,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
       }
       const parts: Record<string, Blob> = { "image/png": blob };
       if (locationHref) {
-        parts["text/plain"] = new Blob([buildCopyText(locationHref, contactNumber)], {
+        parts["text/plain"] = new Blob([buildCopyText(studentName, locationHref, contactNumber)], {
           type: "text/plain",
         });
         parts["text/html"] = new Blob(
@@ -132,7 +134,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
           { type: "text/html" }
         );
       } else {
-        parts["text/plain"] = new Blob([buildCopyText(locationHref, contactNumber)], {
+        parts["text/plain"] = new Blob([buildCopyText(studentName, locationHref, contactNumber)], {
           type: "text/plain",
         });
       }
@@ -149,7 +151,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
   async function copyLocationLink() {
     if (!locationHref) return;
     try {
-      const plainText = buildCopyText(locationHref, contactNumber);
+      const plainText = buildCopyText(studentName, locationHref, contactNumber);
       const ClipboardItemCtor = globalThis.ClipboardItem as typeof ClipboardItem | undefined;
       if (ClipboardItemCtor && navigator.clipboard?.write) {
         const item = new ClipboardItemCtor({
