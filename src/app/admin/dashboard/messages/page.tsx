@@ -11,6 +11,7 @@ type MessageItem = {
   sessionId?: string;
   studentName: string;
   parentName?: string;
+  senderName?: string;
   email: string;
   phone: string;
   campus?: string;
@@ -206,6 +207,7 @@ export default function AdminMessagesPage() {
               <tr>
                 <th className="px-4 py-3 font-medium">Student</th>
                 <th className="px-4 py-3 font-medium">Session ID</th>
+                <th className="px-4 py-3 font-medium">Sender</th>
                 <th className="px-4 py-3 font-medium">Email</th>
                 <th className="px-4 py-3 font-medium">Phone</th>
                 <th className="px-4 py-3 font-medium">Campus</th>
@@ -230,6 +232,9 @@ export default function AdminMessagesPage() {
                   <td className="px-4 py-3 font-mono text-xs text-slate-600">
                     {m.sessionId || "—"}
                   </td>
+                  <td className="px-4 py-3 text-slate-700">
+                    {m.senderName || "System"}
+                  </td>
                   <td className="px-4 py-3 text-slate-700">{m.email}</td>
                   <td className="px-4 py-3 text-slate-700">{m.phone}</td>
                   <td className="px-4 py-3 text-slate-700">{m.campus || "—"}</td>
@@ -244,7 +249,7 @@ export default function AdminMessagesPage() {
               ))}
               {items.length === 0 && !isLoading ? (
                 <tr>
-                  <td className="px-4 py-10 text-sm text-slate-600" colSpan={8}>
+                  <td className="px-4 py-10 text-sm text-slate-600" colSpan={9}>
                     No messages found.
                   </td>
                 </tr>
@@ -259,4 +264,3 @@ export default function AdminMessagesPage() {
     </div>
   );
 }
-

@@ -39,10 +39,11 @@ export async function GET(request: Request) {
   const [total, msgs] = await Promise.all([
     Message.countDocuments(filter),
     Message.find(filter)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean(),
+      .populate({ path: "createdBy", select: "_id name email" })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
   ]);
 
   return NextResponse.json({
@@ -55,6 +56,7 @@ export async function GET(request: Request) {
       sessionId: m.sessionId,
       studentName: m.studentName,
       parentName: m.parentName,
+      senderName: m.createdBy?.name || m.createdBy?.email || "System",
       email: m.email,
       phone: m.whatsapp,
       campus: m.campus,
@@ -77,4 +79,3 @@ export async function DELETE(request: Request) {
     deletedCount: res.deletedCount ?? 0,
   });
 }
-
