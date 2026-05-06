@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Campus from "@/models/Campus";
 import { requireRole } from "@/middleware/auth";
+import { CAMPUS_SEQUENCE_START, normalizeCampusSequence } from "@/lib/campus-sequence";
 
 export const runtime = "nodejs";
 
@@ -43,8 +44,7 @@ export async function PATCH(
     updates.order = Number.isFinite(o) ? o : 0;
   }
   if (body?.nextSequence !== undefined) {
-    const n = Number(body.nextSequence);
-    updates.nextSequence = Number.isFinite(n) && n >= 1 ? Math.floor(n) : 1;
+    updates.nextSequence = normalizeCampusSequence(body.nextSequence);
   }
 
   if (updates.name !== undefined && !updates.name) return badRequest("name is required");
@@ -57,7 +57,14 @@ export async function PATCH(
       runValidators: true,
     }).lean();
     if (!updated) return NextResponse.json({ error: "not found" }, { status: 404 });
-    return NextResponse.json({ ok: true, campus: updated });
+    const updatedCampus = updated as { nextSequence?: number };
+    return NextResponse.json({
+      ok: true,
+      campus: {
+        ...updated,
+        nextSequence: normalizeCampusSequence(updatedCampus.nextSequence || CAMPUS_SEQUENCE_START),
+      },
+    });
   } catch (e: any) {
     const msg = String(e?.message || "");
     if (msg.includes("duplicate key") || e?.code === 11000) {

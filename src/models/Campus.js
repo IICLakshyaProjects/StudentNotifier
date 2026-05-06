@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+import { CAMPUS_SEQUENCE_START } from "@/lib/campus-sequence";
+
 const CampusSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -8,7 +10,7 @@ const CampusSchema = new mongoose.Schema(
     location: { type: String, trim: true, default: "" },
     enabled: { type: Boolean, default: true },
     order: { type: Number, default: 0 },
-    nextSequence: { type: Number, default: 1 },
+    nextSequence: { type: Number, default: CAMPUS_SEQUENCE_START },
   },
   { timestamps: true }
 );
