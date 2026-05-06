@@ -15,6 +15,7 @@ import {
   normalizePhone,
   normalizeString,
 } from "@/lib/validate";
+import { CAMPUS_SEQUENCE_START, buildCampusSessionId } from "@/lib/campus-sequence";
 
 export const runtime = "nodejs";
 
@@ -91,26 +92,33 @@ export async function POST(request: Request) {
   const campusSlug = campusRecordSlug.replace(/[^a-z0-9]+/gi, "").toUpperCase().slice(0, 10) || "CAMPUS";
   const updated = await Campus.findOneAndUpdate(
     { slug: campusRecordSlug },
-    {
-      $setOnInsert: {
-        name: resolvedCampusName,
-        slug: campusRecordSlug,
-        address: resolvedAddress,
-        location: resolvedLocation,
-        enabled: true,
-        order: 0,
+    [
+      {
+        $set: {
+          name: { $ifNull: ["$name", resolvedCampusName] },
+          slug: { $ifNull: ["$slug", campusRecordSlug] },
+          address: { $ifNull: ["$address", resolvedAddress] },
+          location: { $ifNull: ["$location", resolvedLocation] },
+          enabled: { $ifNull: ["$enabled", true] },
+          order: { $ifNull: ["$order", 0] },
+          nextSequence: {
+            $cond: [
+              { $lt: [{ $ifNull: ["$nextSequence", 0] }, CAMPUS_SEQUENCE_START] },
+              CAMPUS_SEQUENCE_START + 1,
+              { $add: [{ $ifNull: ["$nextSequence", 0] }, 1] },
+            ],
+          },
+        },
       },
-      $inc: { nextSequence: 1 },
-    },
+    ],
     {
       upsert: true,
-      setDefaultsOnInsert: true,
       returnDocument: "after",
     }
   ).lean();
-  const nextAfterInc = Number((updated as any)?.nextSequence || 2);
-  const seq = Math.max(1, nextAfterInc - 1);
-  const sessionId = `LAK${campusSlug}${String(seq).padStart(5, "0")}`;
+  const nextAfterInc = Number((updated as any)?.nextSequence || CAMPUS_SEQUENCE_START + 1);
+  const seq = Math.max(CAMPUS_SEQUENCE_START, nextAfterInc - 1);
+  const sessionId = buildCampusSessionId(campusSlug, seq);
 
   const html = buildCounsellingEmailHtml({
     baseUrl: process.env.APP_URL,

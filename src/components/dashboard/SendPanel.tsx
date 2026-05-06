@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { TemplatePreview } from "@/components/dashboard/TemplatePreview";
 import { apiFetch } from "@/lib/auth-client";
+import { buildCampusSessionId, normalizeCampusSequence } from "@/lib/campus-sequence";
 
 type SendResponse = {
   ok: boolean;
@@ -198,10 +199,8 @@ export function SendPanel() {
       value: String(form.extraFields?.[f.key] || ""),
     }));
   const campusInfo = campuses.find((c) => c.name === form.campus);
-  const nextSeq = Number.isFinite(Number(campusInfo?.nextSequence))
-    ? Number(campusInfo?.nextSequence)
-    : 1;
-  const predictedSessionId = `LAK${campusSlug(previewCampus)}${String(nextSeq).padStart(5, "0")}`;
+  const nextSeq = normalizeCampusSequence(campusInfo?.nextSequence);
+  const predictedSessionId = buildCampusSessionId(campusSlug(previewCampus), nextSeq);
   const previewSessionId = sentSessionId || predictedSessionId;
   const previewLocationHref = toLocationHref(previewLocation);
   const previewUrl = `/dashboard/preview?studentName=${encodeURIComponent(

@@ -7,6 +7,11 @@ import { Input } from "@/components/ui/Input";
 import { IconButton } from "@/components/ui/IconButton";
 import { PencilIcon, TrashIcon } from "@/components/ui/icons";
 import { apiFetch } from "@/lib/auth-client";
+import {
+  CAMPUS_SEQUENCE_START,
+  formatCampusSequence,
+  normalizeCampusSequence,
+} from "@/lib/campus-sequence";
 
 type CampusDto = {
   _id: string;
@@ -43,7 +48,7 @@ export default function AdminCampusesPage() {
     location: "",
     enabled: true,
     order: 0,
-    nextSequence: 1,
+    nextSequence: CAMPUS_SEQUENCE_START,
   });
 
   function showToast(message: string) {
@@ -239,7 +244,7 @@ export default function AdminCampusesPage() {
                     <td className="py-3 pr-4">{c.enabled ? "Yes" : "No"}</td>
                     <td className="py-3 pr-4">{c.order}</td>
                     <td className="py-3 pr-4 font-mono text-xs text-slate-600">
-                      {String(c.nextSequence || 1).padStart(5, "0")}
+                      {formatCampusSequence(c.nextSequence)}
                     </td>
                     <td className="py-3 pr-2">
                       <div className="flex justify-end gap-2">
@@ -254,7 +259,7 @@ export default function AdminCampusesPage() {
                               location: c.location || "",
                               enabled: c.enabled,
                               order: c.order,
-                              nextSequence: c.nextSequence || 1,
+                              nextSequence: normalizeCampusSequence(c.nextSequence),
                             });
                           }}
                         >
@@ -328,7 +333,7 @@ export default function AdminCampusesPage() {
                     onChange={(e) =>
                       setEditForm((s) => ({
                         ...s,
-                        nextSequence: Math.max(1, Number(e.target.value || 1)),
+                        nextSequence: normalizeCampusSequence(e.target.value),
                       }))
                     }
                     hint="Next 5-digit number for this campus"

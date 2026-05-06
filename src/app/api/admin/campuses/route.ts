@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Campus from "@/models/Campus";
 import { requireRole } from "@/middleware/auth";
+import { CAMPUS_SEQUENCE_START, normalizeCampusSequence } from "@/lib/campus-sequence";
 
 export const runtime = "nodejs";
 
@@ -30,7 +31,13 @@ export async function GET(request: Request) {
     .sort({ order: 1, createdAt: 1 })
     .lean();
 
-  return NextResponse.json({ ok: true, campuses });
+  return NextResponse.json({
+    ok: true,
+    campuses: campuses.map((campus) => ({
+      ...campus,
+      nextSequence: normalizeCampusSequence((campus as { nextSequence?: number }).nextSequence),
+    })),
+  });
 }
 
 export async function POST(request: Request) {
@@ -57,7 +64,7 @@ export async function POST(request: Request) {
       location,
       enabled,
       order: Number.isFinite(order) ? order : 0,
-      nextSequence: 1,
+      nextSequence: CAMPUS_SEQUENCE_START,
     });
     return NextResponse.json({ ok: true, campus: created });
   } catch (e: any) {
