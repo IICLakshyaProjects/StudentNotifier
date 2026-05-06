@@ -169,6 +169,7 @@ async function sendOne({
     ],
     {
       upsert: true,
+      updatePipeline: true,
       returnDocument: "after",
     }
   ).lean();
