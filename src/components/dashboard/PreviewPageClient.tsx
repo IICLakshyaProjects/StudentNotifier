@@ -47,7 +47,7 @@ function buildCopyText(studentName: string, locationHref: string, contactNumber?
 
 const PROXY_SESSION_IMAGE_URL = "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
 const COPY_TEMPLATE =
-  "Congratulations, your counselling session has been booked successfully. Please find the admit card attached";
+  "Congratulations, your counselling session has been booked successfully. Please find your admit card attached.";
 
 async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
   if (!previewRef.current) return null;

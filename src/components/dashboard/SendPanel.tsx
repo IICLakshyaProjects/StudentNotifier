@@ -63,7 +63,7 @@ function toLocationHref(location: string) {
 
 const PROXY_SESSION_IMAGE_URL = "/api/images/CMA_USA_MAILER-lal_with_blue_elements_3_-removebg-preview.png";
 const COPY_TEMPLATE =
-  "Congratulations! Your counselling session has been successfully booked. Please find the attached admit card";
+  "Congratulations! Your counselling session has been successfully booked. Please find your admit card attached.";
 
 async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
   if (!previewRef.current) return null;

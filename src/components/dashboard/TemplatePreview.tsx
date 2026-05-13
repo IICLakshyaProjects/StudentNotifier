@@ -169,10 +169,8 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
               lineHeight: 1.7,
             }}
           >
-            <div style={{ fontWeight: 700, color: "#B45309", marginBottom: 8 }}>Important</div>
-            <div>
-              Admit Card
-            </div>
+            <div style={{ fontWeight: 700, color: "#B45309", marginBottom: 8 }}>Important:</div>
+            <div>Please carry this Admit Card during your campus visit, as it will be used for your visit verification, counselling coordination, and priority assistance at the campus.</div>
             <div style={{ marginTop: 10 }}>
               <span style={{ fontWeight: 700, color: "#0F172A" }}>Campus Contact No:</span>{" "}
               <span
