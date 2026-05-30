@@ -56,6 +56,12 @@ async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement |
     scale: 2,
     useCORS: true,
     onclone: (clonedDoc) => {
+      clonedDoc.querySelectorAll<HTMLElement>('[data-campus-visual="true"]').forEach((node) => {
+        const fallback = node.dataset.campusExportSrc;
+        if (fallback) {
+          node.style.backgroundImage = `linear-gradient(180deg, rgba(15, 23, 42, 0.08) 0%, rgba(15, 23, 42, 0.72) 100%), url(${fallback})`;
+        }
+      });
       clonedDoc
         .querySelectorAll<HTMLImageElement>('[data-session-visual="true"]')
         .forEach((img) => {
