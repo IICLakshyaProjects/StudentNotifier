@@ -160,6 +160,7 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
                     >
                       {/* Image hero — neutral bg adapts to any campus image tone */}
                       <div
+                        data-export-campus-hero="true"
                         style={{
                           position: "relative",
                           aspectRatio: "4/3",
@@ -174,7 +175,7 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
                             display: "block",
                             width: "100%",
                             height: "100%",
-                            objectFit: "contain",
+                            objectFit: "cover",
                             objectPosition: "center center",
                           }}
                         />

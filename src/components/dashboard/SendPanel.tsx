@@ -68,6 +68,23 @@ import jsPDF from "jspdf";
   async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
     if (!previewRef.current) return null;
     const el = previewRef.current;
+
+    // Root causes (confirmed from html2canvas v1.4.1 source):
+    //   1. `aspect-ratio` is not parsed — campus hero container collapses to 0 height.
+    //   2. `object-fit` / `object-position` are not parsed — campus building image
+    //      stretches to fill the container instead of being letterboxed.
+    // windowWidth correctly defaults to window.innerWidth so flex layout is fine.
+    //
+    // Fix: snapshot the live rendered dimensions and natural image size before the
+    // clone so we can reconstruct the correct visual in onclone.
+    const heroEl    = el.querySelector<HTMLElement>('[data-export-campus-hero]');
+    const campusImg = heroEl ? heroEl.querySelector<HTMLImageElement>('img') : null;
+
+    const heroW = heroEl    ? heroEl.offsetWidth     : 0;
+    const heroH = heroEl    ? heroEl.offsetHeight    : 0;
+    const natW  = campusImg ? campusImg.naturalWidth  : 0;
+    const natH  = campusImg ? campusImg.naturalHeight : 0;
+
     return html2canvas(el, {
       backgroundColor: "#FFFFFF",
       scale: 2,
@@ -76,16 +93,40 @@ import jsPDF from "jspdf";
       scrollX: 0,
       scrollY: -window.scrollY,
       onclone: (clonedDoc, clonedEl) => {
-        if (clonedEl) {
-          // Allow each panel to size independently in the headless iframe so the
-          // right campus image (shorter there due to viewport differences) cannot
-          // cap the left text panel, which would let overflow:hidden clip Date & Time.
-          const flexContainer = clonedEl.querySelector<HTMLElement>('[data-export-flex-container]');
-          if (flexContainer) flexContainer.style.alignItems = "flex-start";
+        if (!clonedEl) return;
 
-          const leftPanel = clonedEl.querySelector<HTMLElement>('[data-export-left-panel]');
-          if (leftPanel) leftPanel.style.overflow = "visible";
+        const hero = clonedEl.querySelector<HTMLElement>('[data-export-campus-hero]');
+        if (hero && heroH > 0) {
+          // Fix 1: replace aspect-ratio with the live pixel height.
+          hero.style.aspectRatio = "unset";
+          hero.style.height      = `${heroH}px`;
+
+          // Fix 2: simulate object-fit:cover + object-position:center center.
+          // html2canvas does not support object-fit, so we compute cover manually:
+          // scale to the larger axis so the image fills the container, then
+          // centre it — the container's overflow:hidden clips the excess.
+          const img = hero.querySelector<HTMLImageElement>('img');
+          if (img && natW > 0 && natH > 0 && heroW > 0) {
+            const scale   = Math.max(heroW / natW, heroH / natH);
+            const dispW   = natW * scale;
+            const dispH   = natH * scale;
+            const offsetL = (heroW - dispW) / 2;
+            const offsetT = (heroH - dispH) / 2;
+
+            img.style.objectFit      = "unset";
+            img.style.objectPosition = "unset";
+            img.style.position       = "absolute";
+            img.style.width          = `${dispW}px`;
+            img.style.height         = `${dispH}px`;
+            img.style.left           = `${offsetL}px`;
+            img.style.top            = `${offsetT}px`;
+          }
         }
+
+        // Safety: prevent overflow:hidden from clipping text in the left panel
+        // if font rendering in the clone differs by a sub-pixel from the live page.
+        const leftPanel = clonedEl.querySelector<HTMLElement>('[data-export-left-panel]');
+        if (leftPanel) leftPanel.style.overflow = "visible";
 
         clonedDoc.querySelectorAll<HTMLElement>('[data-campus-visual="true"]').forEach((node) => {
           const fallback = node.dataset.campusExportSrc;
