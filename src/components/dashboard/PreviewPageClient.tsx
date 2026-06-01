@@ -26,7 +26,7 @@ function toLocationHref(location: string) {
   return `https://${value}`;
 }
 
-function buildLocationHtml(locationHref: string, campus: string, contactNumber?: string) {
+function buildLocationHtml(locationHref: string, contactNumber?: string) {
   const lines = [`<div>For campus location: <a href="${locationHref}">${locationHref}</a></div>`];
   if (contactNumber?.trim()) {
     lines.push(`<div>Please contact campus at: ${contactNumber.trim()}</div>`);
@@ -51,11 +51,32 @@ const COPY_TEMPLATE =
 
 async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
   if (!previewRef.current) return null;
-  return html2canvas(previewRef.current, {
-    backgroundColor: "#ffffff",
+  const el = previewRef.current;
+  return html2canvas(el, {
+    backgroundColor: "#FFFFFF",
     scale: 2,
     useCORS: true,
-    onclone: (clonedDoc) => {
+    allowTaint: false,
+    scrollX: 0,
+    scrollY: -window.scrollY,
+    onclone: (clonedDoc, clonedEl) => {
+      if (clonedEl) {
+        // Allow each panel to size independently in the headless iframe so the
+        // right campus image (shorter there due to viewport differences) cannot
+        // cap the left text panel, which would let overflow:hidden clip Date & Time.
+        const flexContainer = clonedEl.querySelector<HTMLElement>('[data-export-flex-container]');
+        if (flexContainer) flexContainer.style.alignItems = "flex-start";
+
+        const leftPanel = clonedEl.querySelector<HTMLElement>('[data-export-left-panel]');
+        if (leftPanel) leftPanel.style.overflow = "visible";
+      }
+
+      clonedDoc.querySelectorAll<HTMLElement>('[data-campus-visual="true"]').forEach((node) => {
+        const fallback = node.dataset.campusExportSrc;
+        if (fallback) {
+          node.style.backgroundImage = `linear-gradient(180deg, rgba(15, 23, 42, 0.08) 0%, rgba(15, 23, 42, 0.72) 100%), url(${fallback})`;
+        }
+      });
       clonedDoc
         .querySelectorAll<HTMLImageElement>('[data-session-visual="true"]')
         .forEach((img) => {
@@ -130,7 +151,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
           type: "text/plain",
         });
         parts["text/html"] = new Blob(
-          [buildLocationHtml(locationHref, campus, contactNumber)],
+          [buildLocationHtml(locationHref, contactNumber)],
           { type: "text/html" }
         );
       } else {
@@ -159,7 +180,7 @@ export function PreviewPageClient({ studentName, campus, dateTime, address, loca
             type: "text/plain",
           }),
           "text/html": new Blob(
-            [buildLocationHtml(locationHref, campus, contactNumber)],
+            [buildLocationHtml(locationHref, contactNumber)],
             { type: "text/html" }
           ),
         });
