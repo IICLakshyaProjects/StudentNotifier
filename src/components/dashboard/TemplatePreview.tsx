@@ -77,6 +77,7 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
               }}
             >
               <div
+                data-export-flex-container="true"
                 style={{
                   display: "flex",
                   flexWrap: "wrap",
@@ -84,7 +85,7 @@ export const TemplatePreview = React.forwardRef<HTMLDivElement, TemplatePreviewP
                   alignItems: "stretch",
                 }}
               >
-                <div style={{ flex: "1 1 420px", minWidth: 0, position: "relative", overflow: "hidden" }}>
+                <div data-export-left-panel="true" style={{ flex: "1 1 420px", minWidth: 0, position: "relative", overflow: "hidden" }}>
                   <div
                     style={{
                       fontSize: 11,

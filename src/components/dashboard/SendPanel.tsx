@@ -67,11 +67,26 @@ import jsPDF from "jspdf";
 
   async function preparePreviewCanvas(previewRef: React.RefObject<HTMLDivElement | null>) {
     if (!previewRef.current) return null;
-    return html2canvas(previewRef.current, {
+    const el = previewRef.current;
+    return html2canvas(el, {
       backgroundColor: "#FFFFFF",
       scale: 2,
       useCORS: true,
-      onclone: (clonedDoc) => {
+      allowTaint: false,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      onclone: (clonedDoc, clonedEl) => {
+        if (clonedEl) {
+          // Allow each panel to size independently in the headless iframe so the
+          // right campus image (shorter there due to viewport differences) cannot
+          // cap the left text panel, which would let overflow:hidden clip Date & Time.
+          const flexContainer = clonedEl.querySelector<HTMLElement>('[data-export-flex-container]');
+          if (flexContainer) flexContainer.style.alignItems = "flex-start";
+
+          const leftPanel = clonedEl.querySelector<HTMLElement>('[data-export-left-panel]');
+          if (leftPanel) leftPanel.style.overflow = "visible";
+        }
+
         clonedDoc.querySelectorAll<HTMLElement>('[data-campus-visual="true"]').forEach((node) => {
           const fallback = node.dataset.campusExportSrc;
           if (fallback) {
