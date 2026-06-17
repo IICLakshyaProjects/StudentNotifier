@@ -15,6 +15,7 @@
     "bcryptjs": "^3.0.3",
     "csv-parser": "^3.2.0",
     "dotenv": "^17.4.2",
+    "googleapis": "^173.0.0",
     "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.1",

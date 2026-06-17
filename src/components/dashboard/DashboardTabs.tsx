@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 
 type Tab = "send" | "upload";
 
@@ -33,6 +34,12 @@ export function DashboardTabs({
     <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white/40 p-2 ring-1 ring-slate-200/60 backdrop-blur">
       <TabButton id="send" label="Send" />
       <TabButton id="upload" label="Bulk upload" />
+      <Link
+        href="/dashboard/resources"
+        className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all text-slate-600 hover:text-slate-900 hover:bg-white/60"
+      >
+        Resources
+      </Link>
     </div>
   );
 }

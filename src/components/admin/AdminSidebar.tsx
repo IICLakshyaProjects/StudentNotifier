@@ -65,6 +65,11 @@ export function AdminSidebar() {
             title="Messages"
             subtitle="Review message activity"
           />
+          <Item
+            href="/admin/dashboard/resources"
+            title="Resources"
+            subtitle="Manage files & categories"
+          />
         </nav>
 
         <div className="mt-4 space-y-3 px-1">
