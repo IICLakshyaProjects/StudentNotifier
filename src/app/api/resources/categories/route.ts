@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   } catch (err: any) {
     console.error("[resources/categories]", err);
     return NextResponse.json(
-      { error: "Failed to fetch resource categories from Google Drive" },
+      { error: err?.message || "Failed to fetch resource categories from Google Drive" },
       { status: 502 }
     );
   }

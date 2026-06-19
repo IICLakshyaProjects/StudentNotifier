@@ -15,6 +15,11 @@ type DriveFile = {
   thumbnailLink: string | null;
 };
 
+type DriveFolder = {
+  id: string;
+  name: string;
+};
+
 function formatSize(bytes: string | null) {
   if (!bytes) return null;
   const n = parseInt(bytes, 10);
@@ -152,6 +157,22 @@ function ArrowLeftIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+function FolderIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function FileTypeIcon({
   mimeType,
   className,
@@ -172,16 +193,18 @@ export default function ResourceCategoryPage({
   const { slug } = React.use(params);
   const [folderName, setFolderName] = React.useState<string>("");
   const [files, setFiles] = React.useState<DriveFile[]>([]);
+  const [subfolders, setSubfolders] = React.useState<DriveFolder[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    apiFetch<{ ok: true; folderName: string; files: DriveFile[] }>(
+    apiFetch<{ ok: true; folderName: string; files: DriveFile[]; subfolders: DriveFolder[] }>(
       `/api/resources/files?folderId=${slug}`
     )
       .then((res) => {
         setFolderName(res.folderName);
         setFiles(res.files);
+        setSubfolders(res.subfolders ?? []);
       })
       .catch((e: any) => setError(e?.message || "Failed to load files"))
       .finally(() => setIsLoading(false));
@@ -220,14 +243,41 @@ export default function ResourceCategoryPage({
             <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />
           ))}
         </div>
-      ) : files.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center">
-          <FileIcon className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-          <p className="text-sm font-medium text-slate-500">
-            No files available in this category yet.
-          </p>
-        </div>
       ) : (
+        <>
+          {subfolders.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Subfolders
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {subfolders.map((sf) => (
+                  <Link
+                    key={sf.id}
+                    href={`/dashboard/resources/${sf.id}`}
+                    className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-indigo-200 hover:shadow-md hover:ring-1 hover:ring-indigo-200/50"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 ring-1 ring-inset ring-indigo-100 group-hover:bg-indigo-100">
+                      <FolderIcon className="h-4 w-4" />
+                    </div>
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 group-hover:text-indigo-700">
+                      {sf.name}
+                    </span>
+                    <ChevronRightIcon className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-indigo-400" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {files.length === 0 && subfolders.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white px-6 py-16 text-center">
+              <FileIcon className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+              <p className="text-sm font-medium text-slate-500">
+                No files available in this category yet.
+              </p>
+            </div>
+          ) : files.length > 0 ? (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <ul className="divide-y divide-slate-100">
             {files.map((f) => {
@@ -301,6 +351,8 @@ export default function ResourceCategoryPage({
             })}
           </ul>
         </div>
+          ) : null}
+        </>
       )}
     </div>
   );

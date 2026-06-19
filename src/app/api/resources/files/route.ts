@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/auth";
-import {
-  listFilesInFolder,
-  getFolderName,
-  driveViewUrl,
-  driveDownloadUrl,
-} from "@/lib/google-drive";
+import { listFilesInFolder, listSubfoldersInFolder, getFolderName } from "@/lib/google-drive";
 
 export const runtime = "nodejs";
 
@@ -24,22 +19,17 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [folderName, rawFiles] = await Promise.all([
+    const [folderName, files, subfolders] = await Promise.all([
       getFolderName(folderId),
       listFilesInFolder(folderId),
+      listSubfoldersInFolder(folderId),
     ]);
 
-    const files = rawFiles.map((f) => ({
-      ...f,
-      viewUrl: driveViewUrl(f.id),
-      downloadUrl: driveDownloadUrl(f.id),
-    }));
-
-    return NextResponse.json({ ok: true, folderName, files });
+    return NextResponse.json({ ok: true, folderName, files, subfolders });
   } catch (err: any) {
     console.error("[resources/files]", err);
     return NextResponse.json(
-      { error: "Failed to fetch files from Google Drive" },
+      { error: err?.message || "Failed to fetch files from Google Drive" },
       { status: 502 }
     );
   }

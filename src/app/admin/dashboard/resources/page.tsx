@@ -80,8 +80,7 @@ function CategoryCard({
         <IconButton
           title="Edit category"
           size="sm"
-          onClick={(e) => {
-            e.preventDefault();
+          onClick={() => {
             onEdit();
           }}
         >
@@ -91,8 +90,7 @@ function CategoryCard({
           title="Delete category"
           size="sm"
           variant="danger"
-          onClick={(e) => {
-            e.preventDefault();
+          onClick={() => {
             onDelete();
           }}
         >
