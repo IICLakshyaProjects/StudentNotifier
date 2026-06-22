@@ -103,6 +103,55 @@ export async function listFilesInFolder(folderId: string): Promise<DriveFile[]> 
   }));
 }
 
+export async function getDriveFileContent(fileId: string) {
+  const drive = getDrive();
+  const [metadata, content] = await Promise.all([
+    drive.files.get({
+      fileId,
+      fields: "id,name,mimeType,size",
+    }),
+    drive.files.get(
+      {
+        fileId,
+        alt: "media",
+      },
+      {
+        responseType: "arraybuffer",
+      }
+    ),
+  ]);
+
+  return {
+    name: metadata.data.name || fileId,
+    mimeType: metadata.data.mimeType || "application/octet-stream",
+    size: metadata.data.size ?? null,
+    buffer: Buffer.from(content.data as ArrayBuffer),
+  };
+}
+
+export async function getDriveFileThumbnail(fileId: string) {
+  const drive = getDrive();
+  const metadata = await drive.files.get({
+    fileId,
+    fields: "id,name,thumbnailLink",
+  });
+  const thumbnailLink = metadata.data.thumbnailLink;
+  if (!thumbnailLink) {
+    throw new Error("No preview image available for this PDF");
+  }
+
+  const res = await fetch(thumbnailLink);
+  if (!res.ok) {
+    throw new Error("Failed to fetch PDF preview image");
+  }
+
+  return {
+    name: metadata.data.name || fileId,
+    mimeType: res.headers.get("content-type") || "image/png",
+    buffer: Buffer.from(await res.arrayBuffer()),
+  };
+}
+
 export async function getFolderName(folderId: string): Promise<string> {
   const drive = getDrive();
   const res = await drive.files.get({ fileId: folderId, fields: "name" });
