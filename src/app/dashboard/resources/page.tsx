@@ -145,31 +145,136 @@ function CheckIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function CopyLinkButton({ url }: { url: string }) {
-  const [copied, setCopied] = React.useState(false);
+type CopyStatus = "idle" | "copying" | "copied" | "failed";
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(url).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+async function blobToDataUrl(blob: Blob) {
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error || new Error("Unable to read image"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function imageBlobToPngBlob(blob: Blob) {
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas is unavailable");
+    ctx.drawImage(bitmap, 0, 0);
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((pngBlob) => {
+        if (pngBlob) resolve(pngBlob);
+        else reject(new Error("Unable to prepare image for clipboard"));
+      }, "image/png");
     });
+  } finally {
+    bitmap.close();
+  }
+}
+
+async function copyPngBlobToClipboard(blob: Blob, fileName: string) {
+  const ClipboardItemCtor = globalThis.ClipboardItem as typeof ClipboardItem | undefined;
+  if (!ClipboardItemCtor || !navigator.clipboard?.write) {
+    throw new Error("Clipboard image copy is not supported");
+  }
+
+  const pngBlob = blob.type === "image/png" ? blob : await imageBlobToPngBlob(blob);
+
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItemCtor({
+        "image/png": pngBlob,
+      }),
+    ]);
+    return;
+  } catch {
+    const dataUrl = await blobToDataUrl(pngBlob);
+    await navigator.clipboard.write([
+      new ClipboardItemCtor({
+        "text/html": new Blob([`<img src="${dataUrl}" alt="${fileName.replace(/"/g, "&quot;")}">`], {
+          type: "text/html",
+        }),
+        "text/plain": new Blob([fileName], { type: "text/plain" }),
+      }),
+    ]);
+  }
+}
+
+async function fetchClipboardBlob(file: DriveFile, endpoint: "content" | "thumbnail" = "content") {
+  const res = await fetch(
+    `/api/resources/drive-files/${encodeURIComponent(file.id)}/${endpoint}`,
+    { credentials: "include" }
+  );
+  if (!res.ok) throw new Error("Failed to fetch file content");
+  return await res.blob();
+}
+
+async function copyFileBlobToClipboard(file: DriveFile) {
+  const blob = await fetchClipboardBlob(file);
+  await copyPngBlobToClipboard(blob, file.name);
+}
+
+
+function CopyLinkButton({ file }: { file: DriveFile }) {
+  const [status, setStatus] = React.useState<CopyStatus>("idle");
+
+  const finishWithStatus = (nextStatus: CopyStatus) => {
+    setStatus(nextStatus);
+    window.setTimeout(() => setStatus("idle"), 2000);
   };
+
+  const handleCopy = async () => {
+    setStatus("copying");
+    try {
+      if (file.mimeType.startsWith("image/")) {
+        await copyFileBlobToClipboard(file);
+      } else {
+        await navigator.clipboard.writeText(file.viewUrl);
+      }
+      finishWithStatus("copied");
+    } catch (error) {
+      console.error("[resources/copy]", error);
+      finishWithStatus("failed");
+    }
+  };
+
+  const isCopied = status === "copied";
+  const isFailed = status === "failed";
+  const isCopying = status === "copying";
 
   return (
     <button
       type="button"
       onClick={handleCopy}
+      disabled={isCopying}
       className={[
         "inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium shadow-sm transition-all",
-        copied
+        isCopied
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : isFailed
+          ? "border-red-200 bg-red-50 text-red-700"
           : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900 hover:shadow",
       ].join(" ")}
     >
-      {copied ? (
+      {isCopied ? (
         <>
           <CheckIcon className="h-3 w-3" />
           Copied
+        </>
+      ) : isFailed ? (
+        <>
+          <CopyIcon className="h-3 w-3" />
+          Copy failed
+        </>
+      ) : isCopying ? (
+        <>
+          <CopyIcon className="h-3 w-3" />
+          Copying
         </>
       ) : (
         <>
@@ -180,7 +285,6 @@ function CopyLinkButton({ url }: { url: string }) {
     </button>
   );
 }
-
 function FileTypeIcon({ mimeType, className }: { mimeType: string; className?: string }) {
   if (mimeType.startsWith("video/")) return <VideoIcon className={className} />;
   if (mimeType.startsWith("image/")) return <ImageIcon className={className} />;
@@ -245,7 +349,10 @@ export default function ResourcesPage() {
   React.useEffect(() => {
     apiFetch<{ ok: true; categories: Category[] }>("/api/resources/categories")
       .then((res) => setCategories(res.categories))
-      .catch((e: any) => setError(e?.message || "Failed to load resources"))
+      .catch((e: unknown) => {
+        const message = e instanceof Error ? e.message : "Failed to load resources";
+        setError(message);
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -467,7 +574,7 @@ export default function ResourcesPage() {
                             <DownloadIcon className="h-3 w-3" />
                             Save
                           </a>
-                          <CopyLinkButton url={f.viewUrl} />
+                          <CopyLinkButton file={f} />
                         </div>
                       </li>
                     );
