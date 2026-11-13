@@ -174,6 +174,93 @@ import jsPDF from "jspdf";
     return `${h12}:${String(mm).padStart(2, "0")} ${suffix}`;
   }
 
+  const TIME_SELECT_CLASS =
+    "h-11 w-full rounded-xl border border-slate-200/80 bg-white/80 px-3 text-sm text-slate-900 shadow-sm shadow-slate-900/5 backdrop-blur focus:outline-none focus:ring-2 focus:ring-[var(--ring)]";
+
+  // 12-hour time picker. Value in/out stays "HH:MM" (24h) so the rest of the
+  // app (preview, query string, sending) is unaffected.
+  function TimePicker12h({
+    label,
+    value,
+    onChange,
+  }: {
+    label: string;
+    value: string;
+    onChange: (hhmm: string) => void;
+  }) {
+    const parse = (v: string) => {
+      const m = /^(\d{2}):(\d{2})$/.exec(v);
+      if (!m) return { h: "", m: "", p: "AM" };
+      const hh = Number(m[1]);
+      return {
+        h: String(hh % 12 === 0 ? 12 : hh % 12),
+        m: m[2],
+        p: hh >= 12 ? "PM" : "AM",
+      };
+    };
+    const [parts, setParts] = React.useState(() => parse(value));
+
+    // Sync when the parent changes the value externally (e.g. form reset).
+    React.useEffect(() => {
+      if (value) setParts(parse(value));
+      else setParts((p) => (p.h && p.m ? { h: "", m: "", p: "AM" } : p));
+    }, [value]);
+
+    function update(next: { h: string; m: string; p: string }) {
+      setParts(next);
+      if (!next.h || !next.m) {
+        onChange("");
+        return;
+      }
+      let hh = Number(next.h) % 12;
+      if (next.p === "PM") hh += 12;
+      onChange(`${String(hh).padStart(2, "0")}:${next.m}`);
+    }
+
+    return (
+      <div className="block">
+        <div className="mb-1.5 text-sm font-medium text-slate-900">{label}</div>
+        <div className="flex gap-2">
+          <select
+            aria-label="Hour"
+            className={TIME_SELECT_CLASS}
+            value={parts.h}
+            onChange={(e) => update({ ...parts, h: e.target.value })}
+          >
+            <option value="">hh</option>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+              <option key={h} value={String(h)}>
+                {String(h).padStart(2, "0")}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Minute"
+            className={TIME_SELECT_CLASS}
+            value={parts.m}
+            onChange={(e) => update({ ...parts, m: e.target.value })}
+          >
+            <option value="">mm</option>
+            {Array.from({ length: 60 }, (_, i) => i).map((m) => (
+              <option key={m} value={String(m).padStart(2, "0")}>
+                {String(m).padStart(2, "0")}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="AM or PM"
+            className={TIME_SELECT_CLASS}
+            value={parts.p}
+            onChange={(e) => update({ ...parts, p: e.target.value })}
+          >
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </select>
+        </div>
+      </div>
+    );
+  }
+
   export function SendPanel() {
     const [isOpen, setIsOpen] = React.useState(true);
     const [fields, setFields] = React.useState<PublicField[]>([]);
@@ -461,11 +548,10 @@ import jsPDF from "jspdf";
                   value={form.date}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                 />
-                <Input
+                <TimePicker12h
                   label="Time"
-                  type="time"
                   value={form.time}
-                  onChange={(e) => setForm({ ...form, time: e.target.value })}
+                  onChange={(time) => setForm((f) => ({ ...f, time }))}
                 />
                 <div className="sm:col-span-2">
                   <Input
